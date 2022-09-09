@@ -41,5 +41,8 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 
+	//Constant buffers
+	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;
+
 };
 

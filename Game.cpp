@@ -3,6 +3,7 @@
 #include "Input.h"
 #include "Helpers.h"
 #include "Mesh.h"
+#include "BufferStructs.h"
 #include <iostream>
 using namespace std;
 
@@ -89,6 +90,24 @@ void Game::Init()
 		context->VSSetShader(vertexShader.Get(), 0, 0);
 		context->PSSetShader(pixelShader.Get(), 0, 0);
 	}
+
+	//Create Constant Buffer
+	//
+	// Get size as the next multiple of 16 (instead of hardcoding a size here!)
+	unsigned int size = sizeof(VertexShaderData);
+	size = (size + 15) / 16 * 16; // This will work even if your struct size changes
+	// 
+	// Description
+	D3D11_BUFFER_DESC cbDesc = {}; // Sets struct to all zeros
+	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cbDesc.ByteWidth = size; // Must be a multiple of 16
+	cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	cbDesc.Usage = D3D11_USAGE_DYNAMIC;
+
+	// Specify the initial data for this buffer, similar to above
+	D3D11_SUBRESOURCE_DATA initialIndexData = {};
+	// Actually create the buffer with the initial data
+	device->CreateBuffer(&cbDesc, 0, vsConstantBuffer.GetAddressOf());
 }
 
 // --------------------------------------------------------
@@ -273,6 +292,23 @@ void Game::Draw(float deltaTime, float totalTime)
 		// Clear the depth buffer (resets per-pixel occlusion information)
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
+
+	//Define what the shaders will do
+	VertexShaderData vsData;
+	vsData.colorTint = XMFLOAT4(0.5f, 1.0f, 1.0f, 1.0f);
+	vsData.offset = XMFLOAT3(0.25f, 0.0f, 0.0f);
+
+	//Map resource to the GPU itself
+	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+	context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+	memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
+	context->Unmap(vsConstantBuffer.Get(), 0);
+
+	//Hook up resource to the cBuffer in our shader
+	context->VSSetConstantBuffers(
+		0, // Which slot (register) to bind the buffer to?
+		1, // How many are we activating? Can do multiple at once
+		vsConstantBuffer.GetAddressOf()); // Array of buffers (or the address of one)
 
 	//Call draw functions on Mesh Class
 	triangle->Draw();
