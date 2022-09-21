@@ -20,14 +20,18 @@ public:
 	DirectX::XMFLOAT3 GetScale();
 
 	DirectX::XMFLOAT4X4 GetWorldMatrix();
+	DirectX::XMFLOAT4X4 GetInveseTranspose();
+
+	void UpdateMatrices();
 private:
 	DirectX::XMFLOAT3 position;
 	DirectX::XMFLOAT3 rotation;
 	DirectX::XMFLOAT3 scale;
 
 	DirectX::XMFLOAT4X4 worldMatrix;
+	DirectX::XMFLOAT4X4 worldInverseTranspose;
 
-	bool dirty;
+	bool dirty = true;
 
 };
 

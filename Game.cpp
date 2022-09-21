@@ -4,6 +4,7 @@
 #include "Helpers.h"
 #include "Mesh.h"
 #include "BufferStructs.h"
+#include "GameEntity.h"
 #include <iostream>
 using namespace std;
 
@@ -17,6 +18,8 @@ using namespace DirectX;
 std::shared_ptr<Mesh> triangle;
 std::shared_ptr<Mesh> square;
 std::shared_ptr<Mesh> octagon;
+
+std::shared_ptr<GameEntity> entity1;
 
 // --------------------------------------------------------
 // Constructor
@@ -252,6 +255,13 @@ void Game::CreateGeometry()
 	triangle = std::make_shared<Mesh>(verticesTriangle, ARRAYSIZE(verticesTriangle), indicesTriangle, ARRAYSIZE(indicesTriangle), device, context);
 	square = std::make_shared<Mesh>(verticesSquare, ARRAYSIZE(verticesSquare), indicesSquare, ARRAYSIZE(indicesSquare), device, context);
 	octagon = std::make_shared<Mesh>(verticesOct, ARRAYSIZE(verticesOct), indicesOct, ARRAYSIZE(indicesOct), device, context);
+
+	//Game entities
+	entity1 = std::make_shared<GameEntity>(triangle);
+
+	entity1->GetTransform();
+
+	//entity1->GetTransform()->SetPosition(0, 0, 0);
 }
 
 
@@ -293,27 +303,7 @@ void Game::Draw(float deltaTime, float totalTime)
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
-	//Define what the shaders will do
-	VertexShaderData vsData;
-	vsData.colorTint = XMFLOAT4(0.5f, 1.0f, 1.0f, 1.0f);
-	vsData.offset = XMFLOAT3(0.25f, 0.0f, 0.0f);
-
-	//Map resource to the GPU itself
-	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-	context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-	memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
-	context->Unmap(vsConstantBuffer.Get(), 0);
-
-	//Hook up resource to the cBuffer in our shader
-	context->VSSetConstantBuffers(
-		0, // Which slot (register) to bind the buffer to?
-		1, // How many are we activating? Can do multiple at once
-		vsConstantBuffer.GetAddressOf()); // Array of buffers (or the address of one)
-
-	//Call draw functions on Mesh Class
-	triangle->Draw();
-	square->Draw();
-	octagon->Draw();
+	entity1->Draw(context, vsConstantBuffer);
 
 	// Frame END
 	// - These should happen exactly ONCE PER FRAME

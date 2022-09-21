@@ -141,6 +141,7 @@
   <ItemGroup>
     <ClCompile Include="DXCore.cpp" />
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="GameEntity.cpp" />
     <ClCompile Include="Helpers.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -151,6 +152,7 @@
     <ClInclude Include="BufferStructs.h" />
     <ClInclude Include="DXCore.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="GameEntity.h" />
     <ClInclude Include="Helpers.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Mesh.h" />
