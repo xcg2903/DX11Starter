@@ -19,7 +19,7 @@ std::shared_ptr<Mesh> triangle;
 std::shared_ptr<Mesh> square;
 std::shared_ptr<Mesh> octagon;
 
-std::shared_ptr<GameEntity> entity1;
+std::vector<std::shared_ptr<GameEntity>> entities;
 
 // --------------------------------------------------------
 // Constructor
@@ -257,11 +257,21 @@ void Game::CreateGeometry()
 	octagon = std::make_shared<Mesh>(verticesOct, ARRAYSIZE(verticesOct), indicesOct, ARRAYSIZE(indicesOct), device, context);
 
 	//Game entities
-	entity1 = std::make_shared<GameEntity>(triangle);
+	std::shared_ptr<GameEntity> entity1 = std::make_shared<GameEntity>(triangle);
+	std::shared_ptr<GameEntity> entity2 = std::make_shared<GameEntity>(triangle);
+	std::shared_ptr<GameEntity> entity3 = std::make_shared<GameEntity>(octagon);
+	std::shared_ptr<GameEntity> entity4 = std::make_shared<GameEntity>(triangle);
+	std::shared_ptr<GameEntity> entity5 = std::make_shared<GameEntity>(square);
 
-	entity1->GetTransform();
+	entity3->GetTransform()->SetPosition(-0.5, -0.5, 0);
+	entity4->GetTransform()->SetPosition(-1, 0, 0);
+	entity5->GetTransform()->SetPosition(1, -1, 0);
 
-	//entity1->GetTransform()->SetPosition(0, 0, 0);
+	entities.push_back(entity1);
+	entities.push_back(entity2);
+	entities.push_back(entity3);
+	entities.push_back(entity4);
+	entities.push_back(entity5);
 }
 
 
@@ -284,6 +294,13 @@ void Game::Update(float deltaTime, float totalTime)
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
 		Quit();
+
+	//Move
+	entities[0]->GetTransform()->SetPosition(sin(totalTime), 0, 0);
+	entities[1]->GetTransform()->SetPosition(cos(totalTime), -0.5, 0);
+	entities[2]->GetTransform()->SetRotation(0, 0, 2 * totalTime);
+	entities[3]->GetTransform()->SetScale(sin(totalTime) + 1, cos(totalTime) + 1, 0.0f);
+	entities[4]->GetTransform()->SetRotation(0, 0, -2 * totalTime);
 }
 
 // --------------------------------------------------------
@@ -303,7 +320,16 @@ void Game::Draw(float deltaTime, float totalTime)
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
-	entity1->Draw(context, vsConstantBuffer);
+	for (auto& i : entities)
+	{
+		i->Draw(context, vsConstantBuffer);
+	}
+
+	//Hook up resource to the cBuffer in our shader
+	context->VSSetConstantBuffers(
+		0, // Which slot (register) to bind the buffer to?
+		1, // How many are we activating? Can do multiple at once
+		vsConstantBuffer.GetAddressOf()); // Array of buffers (or the address of one)
 
 	// Frame END
 	// - These should happen exactly ONCE PER FRAME

@@ -27,7 +27,7 @@ void GameEntity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContext,
 {
 	//Define what the shaders will do
 	VertexShaderData vsData;
-	vsData.colorTint = XMFLOAT4(0.5f, 1.0f, 1.0f, 1.0f);
+	vsData.colorTint = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	vsData.worldMatrix = transform.GetWorldMatrix();
 
 	//Map resource to the GPU itself
@@ -38,10 +38,4 @@ void GameEntity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContext,
 
 	//Call draw functions on Mesh Class
 	mesh->Draw();
-
-	//Hook up resource to the cBuffer in our shader
-	deviceContext->VSSetConstantBuffers(
-		0, // Which slot (register) to bind the buffer to?
-		1, // How many are we activating? Can do multiple at once
-		vsConstantBuffer.GetAddressOf()); // Array of buffers (or the address of one)
 }
