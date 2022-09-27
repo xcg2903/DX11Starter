@@ -40,6 +40,21 @@ void Transform::Scale(float x, float y, float z)
 	dirty = true;
 }
 
+void Transform::MoveRelative(float x, float y, float z)
+{
+	//Get Rotation
+	XMVECTOR move = XMVectorSet(x, y, z, 0);
+	XMVECTOR rotQuat = XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z);
+
+	//Add values
+	XMVECTOR currentPos = XMLoadFloat3(&position);
+	move = XMVector3Rotate(move, rotQuat);
+	currentPos += move;
+
+	//Store new position
+	XMStoreFloat3(&position, currentPos);
+}
+
 void Transform::SetPosition(float x, float y, float z)
 {
 	position.x = x;
@@ -77,6 +92,45 @@ DirectX::XMFLOAT3 Transform::GetRotation()
 DirectX::XMFLOAT3 Transform::GetScale()
 {
 	return scale;
+}
+
+DirectX::XMFLOAT3 Transform::GetRight()
+{
+	XMFLOAT3 value;
+
+	XMVECTOR vec = XMVectorSet(0, 0, 1, 0);
+	XMVECTOR rotQuat = XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z);
+
+	//Apply rotation and update value
+	XMStoreFloat3(&value, XMVector3Rotate(vec, rotQuat));
+
+	return value;
+}
+
+DirectX::XMFLOAT3 Transform::GetUp()
+{
+	XMFLOAT3 value;
+
+	XMVECTOR vec = XMVectorSet(0, 0, 1, 0);
+	XMVECTOR rotQuat = XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z);
+
+	//Apply rotation and update value
+	XMStoreFloat3(&value, XMVector3Rotate(vec, rotQuat));
+
+	return value;
+}
+
+DirectX::XMFLOAT3 Transform::GetForward()
+{
+	XMFLOAT3 value;
+
+	XMVECTOR vec = XMVectorSet(0, 0, 1, 0);
+	XMVECTOR rotQuat = XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z);
+
+	//Apply rotation and update value
+	XMStoreFloat3(&value, XMVector3Rotate(vec, rotQuat));
+
+	return value;
 }
 
 DirectX::XMFLOAT4X4 Transform::GetWorldMatrix()

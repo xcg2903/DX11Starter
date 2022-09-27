@@ -23,12 +23,15 @@ Transform* GameEntity::GetTransform()
 }
 
 void GameEntity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContext, 
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer)
+	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer,
+	std::shared_ptr<Camera> camera)
 {
 	//Define what the shaders will do
 	VertexShaderData vsData;
 	vsData.colorTint = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	vsData.worldMatrix = transform.GetWorldMatrix();
+	vsData.view = camera->GetViewMatrix();
+	vsData.projection = camera->GetProjectionMatrix();
 
 	//Map resource to the GPU itself
 	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};

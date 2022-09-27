@@ -5,6 +5,7 @@
 #include "Mesh.h"
 #include "BufferStructs.h"
 #include "GameEntity.h"
+#include "Camera.h"
 #include <iostream>
 using namespace std;
 
@@ -20,6 +21,8 @@ std::shared_ptr<Mesh> square;
 std::shared_ptr<Mesh> octagon;
 
 std::vector<std::shared_ptr<GameEntity>> entities;
+
+std::shared_ptr<Camera> camera;
 
 // --------------------------------------------------------
 // Constructor
@@ -111,6 +114,9 @@ void Game::Init()
 	D3D11_SUBRESOURCE_DATA initialIndexData = {};
 	// Actually create the buffer with the initial data
 	device->CreateBuffer(&cbDesc, 0, vsConstantBuffer.GetAddressOf());
+
+	//Create Camera
+	camera = std::make_shared<Camera>(float(windowWidth / windowHeight));
 }
 
 // --------------------------------------------------------
@@ -284,6 +290,13 @@ void Game::OnResize()
 {
 	// Handle base-level DX resize stuff
 	DXCore::OnResize();
+
+	//Update aspect ratio on camera
+	if (camera != NULL)
+	{
+		camera->UpdateProjMatrix(float(windowWidth / windowHeight));
+	}
+
 }
 
 // --------------------------------------------------------
@@ -291,6 +304,9 @@ void Game::OnResize()
 // --------------------------------------------------------
 void Game::Update(float deltaTime, float totalTime)
 {
+	//Call camera update
+	camera->Update(deltaTime);
+
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
 		Quit();
@@ -301,6 +317,8 @@ void Game::Update(float deltaTime, float totalTime)
 	entities[2]->GetTransform()->SetRotation(0, 0, 2 * totalTime);
 	entities[3]->GetTransform()->SetScale(sin(totalTime) + 1, cos(totalTime) + 1, 0.0f);
 	entities[4]->GetTransform()->SetRotation(0, 0, -2 * totalTime);
+
+	//std::cout << entities[0]->GetTransform()->GetPosition().x << "   " << entities[0]->GetTransform()->GetPosition().y << "   " << entities[0]->GetTransform()->GetPosition().z << std::endl;
 }
 
 // --------------------------------------------------------
@@ -322,7 +340,7 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	for (auto& i : entities)
 	{
-		i->Draw(context, vsConstantBuffer);
+		i->Draw(context, vsConstantBuffer, camera);
 	}
 
 	//Hook up resource to the cBuffer in our shader
