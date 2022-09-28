@@ -79,6 +79,16 @@ void Camera::Update(float dt)
 
 		//Apply to rotation
 		transform.Rotate(cursorMovementY * dt * lookSpeed, cursorMovementX * dt * lookSpeed, 0);
+
+		//Clamp rotation
+		XMFLOAT3 rot = transform.GetRotation();
+		if (rot.x > XM_PIDIV2){
+			rot.x = XM_PIDIV2;
+		}
+		if (rot.x < -XM_PIDIV2) {
+			rot.x = -XM_PIDIV2;
+		}
+		transform.SetRotation(rot.x, rot.y, rot.z);
 	}
 
 	//Apply movement to view

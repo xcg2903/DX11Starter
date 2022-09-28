@@ -24,6 +24,9 @@ public:
 private:
 	static Input* instance;
 	Input() {};
+
+	bool keyboardCaptured;
+	bool mouseCaptured;
 #pragma endregion
 
 public:
@@ -64,6 +67,9 @@ public:
 
 	bool MouseMiddlePress();
 	bool MouseMiddleRelease();
+
+	void SetKeyboardCapture(bool capture);
+	void SetMouseCapture(bool capture);
 
 private:
 	// Arrays for the current and previous key states
