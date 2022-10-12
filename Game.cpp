@@ -6,12 +6,13 @@
 #include "BufferStructs.h"
 #include "GameEntity.h"
 #include "Camera.h"
-#include <iostream>
+#include "SimpleShader.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
 
+#include <iostream>
 using namespace std;
 
 // Needed for a helper function to load pre-compiled shader files
@@ -103,8 +104,8 @@ void Game::Init()
 		// Set the active vertex and pixel shaders
 		//  - Once you start applying different shaders to different objects,
 		//    these calls will need to happen multiple times per frame
-		context->VSSetShader(vertexShader.Get(), 0, 0);
-		context->PSSetShader(pixelShader.Get(), 0, 0);
+		//context->VSSetShader(vertexShader.Get(), 0, 0);
+		//context->PSSetShader(pixelShader.Get(), 0, 0);
 	}
 
 	//Create Constant Buffer
@@ -149,6 +150,13 @@ void Game::Init()
 // --------------------------------------------------------
 void Game::LoadShaders()
 {
+	vertexShader = std::make_shared<SimpleVertexShader>(device, context,
+		FixPath(L"VertexShader.cso").c_str());
+	pixelShader = std::make_shared<SimplePixelShader>(device, context,
+		FixPath(L"PixelShader.cso").c_str());
+
+	//LOAD SHADER CODE BEFORE USING SIMPLESHADER
+	/*
 	// BLOBs (or Binary Large OBjects) for reading raw data from external files
 	// - This is a simplified way of handling big chunks of external data
 	// - Literally just a big array of bytes read from a file
@@ -207,6 +215,7 @@ void Game::LoadShaders()
 			vertexShaderBlob->GetBufferSize(),		// Size of the shader code that uses this layout
 			inputLayout.GetAddressOf());			// Address of the resulting ID3D11InputLayout pointer
 	}
+	*/
 }
 
 
