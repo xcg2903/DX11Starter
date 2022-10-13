@@ -23,6 +23,7 @@ using namespace std;
 using namespace DirectX;
 
 //Variables for testing
+
 std::shared_ptr<Mesh> triangle;
 std::shared_ptr<Mesh> square;
 std::shared_ptr<Mesh> octagon;
@@ -34,8 +35,8 @@ std::shared_ptr<Camera> camera;
 std::shared_ptr<Material> mat1;
 std::shared_ptr<Material> mat2;
 std::shared_ptr<Material> mat3;
+std::shared_ptr<Material> customMat;
 
-//3D objs
 std::shared_ptr<Mesh> cube;
 std::shared_ptr<Mesh> cylinder;
 std::shared_ptr<Mesh> helix;
@@ -43,6 +44,9 @@ std::shared_ptr<Mesh> quad;
 std::shared_ptr<Mesh> quaddouble;
 std::shared_ptr<Mesh> sphere;
 std::shared_ptr<Mesh> torus;
+
+std::shared_ptr<SimplePixelShader> customPixelShader;
+
 
 // --------------------------------------------------------
 // Constructor
@@ -152,10 +156,14 @@ void Game::LoadShaders()
 	pixelShader = make_shared<SimplePixelShader>(device, context,
 		FixPath(L"PixelShader.cso").c_str());
 
+	customPixelShader = make_shared<SimplePixelShader>(device, context,
+		FixPath(L"CustomTestShader.cso").c_str());
+
 	//CREATE MATERIALS
 	mat1 = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 0, 1), pixelShader, vertexShader);
 	mat2 = make_shared<Material>(DirectX::XMFLOAT4(0, 1, 1, 1), pixelShader, vertexShader);
 	mat3 = make_shared<Material>(DirectX::XMFLOAT4(1, 0, 1, 1), pixelShader, vertexShader);
+	customMat = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), customPixelShader, vertexShader);
 }
 
 
@@ -247,11 +255,11 @@ void Game::CreateGeometry()
 	//Game entities
 	std::shared_ptr<GameEntity> entity1 = std::make_shared<GameEntity>(cube, mat1);
 	std::shared_ptr<GameEntity> entity2 = std::make_shared<GameEntity>(cylinder, mat2);
-	std::shared_ptr<GameEntity> entity3 = std::make_shared<GameEntity>(helix, mat2);
+	std::shared_ptr<GameEntity> entity3 = std::make_shared<GameEntity>(helix, customMat);
 	std::shared_ptr<GameEntity> entity4 = std::make_shared<GameEntity>(quad, mat2);
-	std::shared_ptr<GameEntity> entity5 = std::make_shared<GameEntity>(quaddouble, mat2);
-	std::shared_ptr<GameEntity> entity6 = std::make_shared<GameEntity>(sphere, mat2);
-	std::shared_ptr<GameEntity> entity7 = std::make_shared<GameEntity>(torus, mat2);
+	std::shared_ptr<GameEntity> entity5 = std::make_shared<GameEntity>(quaddouble, customMat);
+	std::shared_ptr<GameEntity> entity6 = std::make_shared<GameEntity>(sphere, customMat);
+	std::shared_ptr<GameEntity> entity7 = std::make_shared<GameEntity>(torus, customMat);
 
 	entity1->GetTransform()->SetPosition(-9, 0, 0);
 	entity2->GetTransform()->SetPosition(-6, 0, 0);
