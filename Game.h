@@ -5,6 +5,7 @@
 #include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
 #include <iostream>
 #include <vector>
+#include "SimpleShader.h"
 
 class Game 
 	: public DXCore
@@ -38,12 +39,9 @@ private:
 	//Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
 	
 	// Shaders and shader-related constructs
-	shared_ptr<SimplePixelShader> pixelShader;
-	shared_ptr<SimpleVertexShader> vertexShader;
+	std::shared_ptr<SimplePixelShader> pixelShader;
+	std::shared_ptr<SimpleVertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
-
-	//Constant buffers
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;
 
 };
 

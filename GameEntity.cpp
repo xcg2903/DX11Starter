@@ -3,9 +3,10 @@
 #include <DirectXMath.h>
 using namespace DirectX;
 
-GameEntity::GameEntity(std::shared_ptr<Mesh> mesh)
+GameEntity::GameEntity(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material)
 {
 	this->mesh = mesh;
+	this->material = material;
 }
 
 GameEntity::~GameEntity()
@@ -22,22 +23,32 @@ Transform* GameEntity::GetTransform()
 	return &transform;
 }
 
-void GameEntity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContext, 
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer,
+std::shared_ptr<Material> GameEntity::GetMaterial()
+{
+	return material;
+}
+
+void GameEntity::SetMaterial(std::shared_ptr<Material>)
+{
+	this->material = material;
+}
+
+void GameEntity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContext,
 	std::shared_ptr<Camera> camera)
 {
-	//Define what the shaders will do
-	VertexShaderData vsData;
-	vsData.colorTint = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	vsData.worldMatrix = transform.GetWorldMatrix();
-	vsData.view = camera->GetViewMatrix();
-	vsData.projection = camera->GetProjectionMatrix();
+	//Activate the Shaders for this material
+	material->GetVertexShader()->SetShader();
+	material->GetPixelShader()->SetShader();
+
+	//Define what the shaders will do, now using SimpleShader and our Material!
+	std::shared_ptr<SimpleVertexShader> vs = material->GetVertexShader();
+	vs->SetFloat4("colorTint", material->GetColorTint()); // Strings here MUST
+	vs->SetMatrix4x4("world", transform.GetWorldMatrix()); // match variable
+	vs->SetMatrix4x4("view", camera->GetViewMatrix()); // names in the
+	vs->SetMatrix4x4("projection", camera->GetProjectionMatrix()); // shader’s cbuffer!
 
 	//Map resource to the GPU itself
-	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-	deviceContext->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-	memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
-	deviceContext->Unmap(vsConstantBuffer.Get(), 0);
+	vs->CopyAllBufferData();
 
 	//Call draw functions on Mesh Class
 	mesh->Draw();
