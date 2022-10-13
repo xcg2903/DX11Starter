@@ -1,5 +1,4 @@
 #include "GameEntity.h"
-#include "BufferStructs.h"
 #include <DirectXMath.h>
 using namespace DirectX;
 
@@ -42,13 +41,16 @@ void GameEntity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContext,
 
 	//Define what the shaders will do, now using SimpleShader and our Material!
 	std::shared_ptr<SimpleVertexShader> vs = material->GetVertexShader();
-	vs->SetFloat4("colorTint", material->GetColorTint()); // Strings here MUST
+	std::shared_ptr<SimplePixelShader> ps = material->GetPixelShader();
+
+	ps->SetFloat4("colorTint", material->GetColorTint()); // Strings here MUST
 	vs->SetMatrix4x4("world", transform.GetWorldMatrix()); // match variable
 	vs->SetMatrix4x4("view", camera->GetViewMatrix()); // names in the
 	vs->SetMatrix4x4("projection", camera->GetProjectionMatrix()); // shader’s cbuffer!
 
 	//Map resource to the GPU itself
 	vs->CopyAllBufferData();
+	ps->CopyAllBufferData();
 
 	//Call draw functions on Mesh Class
 	mesh->Draw();

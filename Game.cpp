@@ -3,7 +3,6 @@
 #include "Input.h"
 #include "Helpers.h"
 #include "Mesh.h"
-#include "BufferStructs.h"
 #include "GameEntity.h"
 #include "Camera.h"
 #include "SimpleShader.h"
@@ -35,6 +34,15 @@ std::shared_ptr<Camera> camera;
 std::shared_ptr<Material> mat1;
 std::shared_ptr<Material> mat2;
 std::shared_ptr<Material> mat3;
+
+//3D objs
+std::shared_ptr<Mesh> cube;
+std::shared_ptr<Mesh> cylinder;
+std::shared_ptr<Mesh> helix;
+std::shared_ptr<Mesh> quad;
+std::shared_ptr<Mesh> quaddouble;
+std::shared_ptr<Mesh> sphere;
+std::shared_ptr<Mesh> torus;
 
 // --------------------------------------------------------
 // Constructor
@@ -167,6 +175,9 @@ void Game::CreateGeometry()
 	XMFLOAT4 cyan	 = XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f);
 	XMFLOAT4 white	 = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 
+	XMFLOAT3 normal = XMFLOAT3(0.0f, 0.0f, -1.0f);
+	XMFLOAT2 uv = XMFLOAT2(0.0f, 0.0f);;
+
 	// Set up the vertices of the triangle we would like to draw
 	// - We're going to copy this array, exactly as it exists in CPU memory
 	//    over to a Direct3D-controlled data structure on the GPU (the vertex buffer)
@@ -183,10 +194,11 @@ void Game::CreateGeometry()
 	//Initalize Vertex Arrays
 	Vertex verticesTriangle[] =
 	{
-		{ XMFLOAT3(+0.5f, +0.7f, +0.0f), yellow },
-		{ XMFLOAT3(+0.7f, +0.2f, +0.0f), cyan },
-		{ XMFLOAT3(+0.3f, +0.2f, +0.0f), magenta },
+		{ XMFLOAT3(+0.5f, +0.7f, +0.0f), normal, uv },
+		{ XMFLOAT3(+0.7f, +0.2f, +0.0f), normal, uv },
+		{ XMFLOAT3(+0.3f, +0.2f, +0.0f), normal, uv },
 	};
+	/*
 	Vertex verticesSquare[] =
 	{
 		{ XMFLOAT3(-0.7f, +0.7f, +0.0f), yellow },
@@ -206,6 +218,7 @@ void Game::CreateGeometry()
 		{ XMFLOAT3(-0.3f, +0.0f, +0.0f), red },
 		{ XMFLOAT3(-0.2f, +0.2f, +0.0f), white },
 	};
+	*/
 
 	// Set up indices, which tell us which vertices to use and in which order
 	// - This is redundant for just 3 vertices, but will be more useful later
@@ -219,27 +232,42 @@ void Game::CreateGeometry()
 	unsigned int indicesOct[] = { 0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 5, 0, 5, 6, 0, 6, 7, 0, 7, 8, 0, 8, 1 };
 
 	//Initalize Shared Pointers to meshes
-	triangle = std::make_shared<Mesh>(verticesTriangle, ARRAYSIZE(verticesTriangle), indicesTriangle, ARRAYSIZE(indicesTriangle), device, context);
-	square = std::make_shared<Mesh>(verticesSquare, ARRAYSIZE(verticesSquare), indicesSquare, ARRAYSIZE(indicesSquare), device, context);
-	octagon = std::make_shared<Mesh>(verticesOct, ARRAYSIZE(verticesOct), indicesOct, ARRAYSIZE(indicesOct), device, context);
+	//triangle = std::make_shared<Mesh>(verticesTriangle, ARRAYSIZE(verticesTriangle), indicesTriangle, ARRAYSIZE(indicesTriangle), device, context);
+	//square = std::make_shared<Mesh>(verticesSquare, ARRAYSIZE(verticesSquare), indicesSquare, ARRAYSIZE(indicesSquare), device, context);
+	//octagon = std::make_shared<Mesh>(verticesOct, ARRAYSIZE(verticesOct), indicesOct, ARRAYSIZE(indicesOct), device, context);
+
+	cube = std::make_shared<Mesh>(R"(Assets/cube.obj)", device, context);
+	cylinder = std::make_shared<Mesh>(R"(Assets/cylinder.obj)", device, context);
+	helix = std::make_shared<Mesh>(R"(Assets/helix.obj)", device, context);
+	quad = std::make_shared<Mesh>(R"(Assets/quad.obj)", device, context);
+	quaddouble = std::make_shared<Mesh>(R"(Assets/quad_double_sided.obj)", device, context);
+	sphere = std::make_shared<Mesh>(R"(Assets/sphere.obj)", device, context);
+	torus = std::make_shared<Mesh>(R"(Assets/torus.obj)", device, context);
 
 	//Game entities
-	std::shared_ptr<GameEntity> entity1 = std::make_shared<GameEntity>(triangle, mat1);
-	std::shared_ptr<GameEntity> entity2 = std::make_shared<GameEntity>(triangle, mat1);
-	std::shared_ptr<GameEntity> entity3 = std::make_shared<GameEntity>(octagon, mat2);
-	std::shared_ptr<GameEntity> entity4 = std::make_shared<GameEntity>(triangle, mat2);
-	std::shared_ptr<GameEntity> entity5 = std::make_shared<GameEntity>(square, mat3);
+	std::shared_ptr<GameEntity> entity1 = std::make_shared<GameEntity>(cube, mat1);
+	std::shared_ptr<GameEntity> entity2 = std::make_shared<GameEntity>(cylinder, mat2);
+	std::shared_ptr<GameEntity> entity3 = std::make_shared<GameEntity>(helix, mat2);
+	std::shared_ptr<GameEntity> entity4 = std::make_shared<GameEntity>(quad, mat2);
+	std::shared_ptr<GameEntity> entity5 = std::make_shared<GameEntity>(quaddouble, mat2);
+	std::shared_ptr<GameEntity> entity6 = std::make_shared<GameEntity>(sphere, mat2);
+	std::shared_ptr<GameEntity> entity7 = std::make_shared<GameEntity>(torus, mat2);
 
-	entity2->GetTransform()->SetPosition(0.2, -0.5, 0);
-	entity3->GetTransform()->SetPosition(-0.5, -0.5, 0);
-	entity4->GetTransform()->SetPosition(-1, 0, 0);
-	entity5->GetTransform()->SetPosition(1, -1, 0);
+	entity1->GetTransform()->SetPosition(-9, 0, 0);
+	entity2->GetTransform()->SetPosition(-6, 0, 0);
+	entity3->GetTransform()->SetPosition(-3, 0, 0);
+	entity4->GetTransform()->SetPosition(0, 0, 0);
+	entity5->GetTransform()->SetPosition(3, 0, 0);
+	entity6->GetTransform()->SetPosition(6, 0, 0);
+	entity7->GetTransform()->SetPosition(9, 0, 0);
 
 	entities.push_back(entity1);
 	entities.push_back(entity2);
 	entities.push_back(entity3);
 	entities.push_back(entity4);
 	entities.push_back(entity5);
+	entities.push_back(entity6);
+	entities.push_back(entity7);
 }
 
 
@@ -279,9 +307,9 @@ void Game::Update(float deltaTime, float totalTime)
 	//Move
 	//entities[0]->GetTransform()->SetPosition(sin(totalTime), 0, 0);
 	//entities[1]->GetTransform()->SetPosition(cos(totalTime), -0.5, 0);
-	entities[2]->GetTransform()->Rotate(0, 0, 2 * deltaTime);
-	entities[3]->GetTransform()->SetScale(sin(totalTime) + 1, cos(totalTime) + 1, 0.0f);
-	entities[4]->GetTransform()->Rotate(0, 0, -2 * deltaTime);
+	//entities[2]->GetTransform()->Rotate(0, 0, 2 * deltaTime);
+	//entities[3]->GetTransform()->SetScale(sin(totalTime) + 1, cos(totalTime) + 1, 0.0f);
+	//entities[4]->GetTransform()->Rotate(0, 0, -2 * deltaTime);
 
 	//std::cout << entities[0]->GetTransform()->GetPosition().x << "   " << entities[0]->GetTransform()->GetPosition().y << "   " << entities[0]->GetTransform()->GetPosition().z << std::endl;
 }

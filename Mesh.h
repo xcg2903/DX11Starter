@@ -15,17 +15,22 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContext;
 
 	//Number of indices in index buffer
-	int indices;
+	int indexCounter;
 
 public:
 	Mesh(
 		Vertex* vertexArray,		//My verticies for this mesh
 		int verticies,				//Vertex count
 		unsigned int* indexArray,	//My indices for this mesh (order of points)
-		int indicies,				//Index count
+		int indexCounter,				//Index count
 		Microsoft::WRL::ComPtr<ID3D11Device> device,
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContext
 		);
+	Mesh(
+		const char* filename,		//My verticies for this mesh
+		Microsoft::WRL::ComPtr<ID3D11Device> device,
+		Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContext
+	);
 	~Mesh();
 
 	//Methods
