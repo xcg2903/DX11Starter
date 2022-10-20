@@ -23,7 +23,6 @@ using namespace std;
 using namespace DirectX;
 
 //Variables for testing
-
 std::shared_ptr<Mesh> triangle;
 std::shared_ptr<Mesh> square;
 std::shared_ptr<Mesh> octagon;
@@ -46,6 +45,8 @@ std::shared_ptr<Mesh> sphere;
 std::shared_ptr<Mesh> torus;
 
 std::shared_ptr<SimplePixelShader> customPixelShader;
+
+XMFLOAT3 ambientColor = XMFLOAT3(0.0f, 0.1f, 0.25f);
 
 
 // --------------------------------------------------------
@@ -160,10 +161,10 @@ void Game::LoadShaders()
 		FixPath(L"CustomTestShader.cso").c_str());
 
 	//CREATE MATERIALS
-	mat1 = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 0, 1), pixelShader, vertexShader);
-	mat2 = make_shared<Material>(DirectX::XMFLOAT4(0, 1, 1, 1), pixelShader, vertexShader);
-	mat3 = make_shared<Material>(DirectX::XMFLOAT4(1, 0, 1, 1), pixelShader, vertexShader);
-	customMat = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), customPixelShader, vertexShader);
+	mat1 = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 0, 1), pixelShader, vertexShader, 0.2);
+	mat2 = make_shared<Material>(DirectX::XMFLOAT4(0, 1, 1, 1), pixelShader, vertexShader, 0.4);
+	mat3 = make_shared<Material>(DirectX::XMFLOAT4(1, 0, 1, 1), pixelShader, vertexShader, 0.6);
+	customMat = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), customPixelShader, vertexShader, 0.8);
 }
 
 
@@ -257,9 +258,9 @@ void Game::CreateGeometry()
 	std::shared_ptr<GameEntity> entity2 = std::make_shared<GameEntity>(cylinder, mat2);
 	std::shared_ptr<GameEntity> entity3 = std::make_shared<GameEntity>(helix, customMat);
 	std::shared_ptr<GameEntity> entity4 = std::make_shared<GameEntity>(quad, mat2);
-	std::shared_ptr<GameEntity> entity5 = std::make_shared<GameEntity>(quaddouble, customMat);
-	std::shared_ptr<GameEntity> entity6 = std::make_shared<GameEntity>(sphere, customMat);
-	std::shared_ptr<GameEntity> entity7 = std::make_shared<GameEntity>(torus, customMat);
+	std::shared_ptr<GameEntity> entity5 = std::make_shared<GameEntity>(quaddouble, mat1);
+	std::shared_ptr<GameEntity> entity6 = std::make_shared<GameEntity>(sphere, mat1);
+	std::shared_ptr<GameEntity> entity7 = std::make_shared<GameEntity>(torus, mat1);
 
 	entity1->GetTransform()->SetPosition(-9, 0, 0);
 	entity2->GetTransform()->SetPosition(-6, 0, 0);
@@ -341,6 +342,7 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	for (auto& i : entities)
 	{
+		i->GetMaterial()->GetPixelShader()->SetFloat3("ambient", ambientColor); //Send world ambient to shader
 		i->Draw(context, camera);
 	}
 

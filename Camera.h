@@ -13,6 +13,7 @@ public:
 
 	DirectX::XMFLOAT4X4 GetViewMatrix();
 	DirectX::XMFLOAT4X4 GetProjectionMatrix();
+	Transform GetTransform();
 
 private:
 	Transform transform;

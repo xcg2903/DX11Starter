@@ -43,10 +43,16 @@ void GameEntity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContext,
 	std::shared_ptr<SimpleVertexShader> vs = material->GetVertexShader();
 	std::shared_ptr<SimplePixelShader> ps = material->GetPixelShader();
 
+	//Pixel Shader References
 	ps->SetFloat4("colorTint", material->GetColorTint()); // Strings here MUST
-	vs->SetMatrix4x4("world", transform.GetWorldMatrix()); // match variable
-	vs->SetMatrix4x4("view", camera->GetViewMatrix()); // names in the
-	vs->SetMatrix4x4("projection", camera->GetProjectionMatrix()); // shader’s cbuffer!
+	ps->SetFloat3("cameraPos", camera->GetTransform().GetPosition());
+	ps->SetFloat("roughness", material->GetRoughness());
+
+	//Vertex Shader References
+	vs->SetMatrix4x4("world", transform.GetWorldMatrix());
+	vs->SetMatrix4x4("view", camera->GetViewMatrix());
+	vs->SetMatrix4x4("projection", camera->GetProjectionMatrix());
+	vs->SetMatrix4x4("worldInvTranspose", transform.GetInveseTranspose());
 
 	//Map resource to the GPU itself
 	vs->CopyAllBufferData();

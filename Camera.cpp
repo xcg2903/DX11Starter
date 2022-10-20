@@ -103,3 +103,7 @@ DirectX::XMFLOAT4X4 Camera::GetProjectionMatrix()
 {
 	return projMatrix;
 }
+Transform Camera::GetTransform()
+{
+	return transform;
+}

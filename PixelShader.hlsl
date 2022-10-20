@@ -1,24 +1,13 @@
+#include "ShaderInclude.hlsli"
+
 //Colortint cbuffer
 cbuffer ExternalData : register(b0)
 {
 	float4 colorTint;
+	float3 cameraPos;
+	float roughness;
+	float3 ambient;
 }
-
-// Struct representing the data we expect to receive from earlier pipeline stages
-// - Should match the output of our corresponding vertex shader
-// - The name of the struct itself is unimportant
-// - The variable names don't have to match other shaders (just the semantics)
-// - Each variable must have a semantic, which defines its usage
-struct VertexToPixel
-{
-	// Data type
-	//  |
-	//  |   Name          Semantic
-	//  |    |                |
-	//  v    v                v
-	float4 screenPosition	: SV_POSITION;
-	float2 uv				: TEXCOORD;        // UV Coord
-};
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
@@ -31,10 +20,15 @@ struct VertexToPixel
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
+	//Normalize normals
+	input.normal = normalize(input.normal);
+
 	// Just return the input color
 	// - This color (like most values passing through the rasterizer) is 
 	//   interpolated for each pixel between the corresponding vertices 
 	//   of the triangle we're rendering
-	//return colorTint;
-	return float4(input.uv, 0, 1); //Test UV coordinates
+	//return float4(ambient, 1);
+	return float4(input.normal, 1); // This is temporary
+	//return float4(roughness.rrr, 1); //Test Roughness
+	//return float4(input.uv, 0, 1); //Test UV coordinates
 }
