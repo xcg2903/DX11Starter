@@ -10,6 +10,8 @@ cbuffer ExternalData : register(b0)
 	Light dirLight1;
 	Light dirLight2;
 	Light dirLight3;
+	Light pointLight1;
+	Light pointLight2;
 }
 
 float3 diffuse(
@@ -33,6 +35,13 @@ float3 phong(
 	float3 spec = pow(saturate(dot(reflectionV, viewV)), MAX_SPECULAR_EXPONENT); //Compare view and reflection directions
 
 	return spec;
+}
+
+float attenuate(Light light, float3 worldPos)
+{
+	float dist = distance(light.position, worldPos);
+	float att = saturate(1.0f - (dist * dist / (light.range * light.range)));
+	return att * att;
 }
 
 // --------------------------------------------------------
@@ -59,6 +68,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 	float3 dirToDirLight2 = normalize(dirLight2.direction * -1);
 	float3 dirToDirLight3 = normalize(dirLight3.direction * -1);
 
+	//DIRECTIONAL LIGHTS
 	//Light1
 	float3 phong1 = phong(normalize(dirLight1.direction), MAX_SPECULAR_EXPONENT, input.normal, input.worldPosition);
 	float3 diffuse1 = diffuse(input.normal, dirToDirLight1);
@@ -72,8 +82,24 @@ float4 main(VertexToPixel input) : SV_TARGET
 	float3 diffuse3 = diffuse(input.normal, dirToDirLight3);
 	float3 light3 = (surfaceColor * (diffuse3 + phong3)) * dirLight3.color;
 
+	//POINT LIGHTS
+	//Light 4
+	float3 point1Dir = input.worldPosition - pointLight1.position; //Calulate from this point to point light
+	float3 dirToPointLight1 = normalize(point1Dir * -1);
+	float3 phong4 = phong(normalize(point1Dir), MAX_SPECULAR_EXPONENT, input.normal, input.worldPosition);
+	float3 diffuse4 = diffuse(input.normal, dirToPointLight1);
+	float3 light4 = (surfaceColor * (diffuse4 + phong4)) * pointLight1.color;
+	light4 *= attenuate(pointLight1, input.worldPosition);
+	//Light 5
+	float3 point2Dir = input.worldPosition - pointLight2.position; //Calulate from this point to point light
+	float3 dirToPointLight2 = normalize(point2Dir * -1);
+	float3 phong5 = phong(normalize(point2Dir), MAX_SPECULAR_EXPONENT, input.normal, input.worldPosition);
+	float3 diffuse5 = diffuse(input.normal, dirToPointLight2);
+	float3 light5 = (surfaceColor * (diffuse5 + phong5)) * pointLight2.color;
+	light5 *= attenuate(pointLight2, input.worldPosition);
+
 	//Rendering equation
-	finalColor = light1 + light2 + light3 + (ambient * surfaceColor);
+	finalColor = light1 + light2 + light3 + light4 + light5 + (ambient * surfaceColor);
 
 	// Just return the input color
 	// - This color (like most values passing through the rasterizer) is 

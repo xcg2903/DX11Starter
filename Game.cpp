@@ -107,24 +107,38 @@ void Game::Init()
 	//Lighting
 	ambientColor = XMFLOAT3(0.0f, 0.1f, 0.25f);
 
-	//Yellow
+	//Yellow Directional
 	directional1 = {};
 	directional1.type = LIGHT_TYPE_DIRECTIONAL;
 	directional1.direction = XMFLOAT3(0.0, -1.0, 1.0);
 	directional1.color = XMFLOAT3(1.0, 1.0, 0.0);
 	directional1.intensity = 1.0f;
-	//Magenta
+	//Magenta Directional
 	directional2 = {};
 	directional2.type = LIGHT_TYPE_DIRECTIONAL;
 	directional2.direction = XMFLOAT3(1.0, -1.0, 0.0);
 	directional2.color = XMFLOAT3(1.0, 0.0, 1.0);
 	directional2.intensity = 1.0f;
-	//Cyan
+	//Cyan Directional
 	directional3 = {};
 	directional3.type = LIGHT_TYPE_DIRECTIONAL;
 	directional3.direction = XMFLOAT3(-1.0, -1.0, 0.0);
 	directional3.color = XMFLOAT3(0.0, 1.0, 1.0);
 	directional3.intensity = 1.0f;
+	//Red Point
+	point1 = {};
+	point1.type = LIGHT_TYPE_POINT;
+	point1.position = XMFLOAT3(-2.5, -1.0, 4.0);
+	point1.color = XMFLOAT3(1.0, 0.0, 0.0);
+	point1.range = 15.0f;
+	point1.intensity = 2.0f;
+	//Green Point
+	point2 = {};
+	point2.type = LIGHT_TYPE_POINT;
+	point2.position = XMFLOAT3(6.0, -3.0, 0.0);
+	point2.color = XMFLOAT3(0.0, 1.0, 0.0);
+	point2.range = 20.0f;
+	point2.intensity = 2.0f;
 
 	// Initialize ImGui itself & platform/renderer backends
 	IMGUI_CHECKVERSION();
@@ -254,7 +268,7 @@ void Game::CreateGeometry()
 	std::shared_ptr<GameEntity> entity2 = std::make_shared<GameEntity>(cylinder, mat2);
 	std::shared_ptr<GameEntity> entity3 = std::make_shared<GameEntity>(helix, mat3);
 	std::shared_ptr<GameEntity> entity4 = std::make_shared<GameEntity>(quad, mat2);
-	std::shared_ptr<GameEntity> entity5 = std::make_shared<GameEntity>(quaddouble, customMat);
+	std::shared_ptr<GameEntity> entity5 = std::make_shared<GameEntity>(quaddouble, mat2);
 	std::shared_ptr<GameEntity> entity6 = std::make_shared<GameEntity>(sphere, mat1);
 	std::shared_ptr<GameEntity> entity7 = std::make_shared<GameEntity>(torus, mat1);
 
@@ -310,11 +324,13 @@ void Game::Update(float deltaTime, float totalTime)
 		Quit();
 
 	//Move
-	//entities[0]->GetTransform()->SetPosition(sin(totalTime), 0, 0);
-	//entities[1]->GetTransform()->SetPosition(cos(totalTime), -0.5, 0);
-	//entities[2]->GetTransform()->Rotate(0, 0, 2 * deltaTime);
-	//entities[3]->GetTransform()->SetScale(sin(totalTime) + 1, cos(totalTime) + 1, 0.0f);
-	//entities[4]->GetTransform()->Rotate(0, 0, -2 * deltaTime);
+	entities[0]->GetTransform()->SetPosition(-9, (sin(totalTime + 0.1) * 4), 0);
+	entities[1]->GetTransform()->SetPosition(-6, (sin(totalTime + 0.2) * 4), 0);
+	entities[2]->GetTransform()->SetPosition(-3, (sin(totalTime + 0.3) * 4), 0);
+	entities[3]->GetTransform()->SetPosition(0,  (sin(totalTime + 0.4) * 4), 0);
+	entities[4]->GetTransform()->SetPosition(3,  (sin(totalTime + 0.5) * 4), 0);
+	entities[5]->GetTransform()->SetPosition(6,  (sin(totalTime + 0.6) * 4), 0);
+	entities[6]->GetTransform()->SetPosition(9,  (sin(totalTime + 0.7) * 4), 0);
 
 	//std::cout << entities[0]->GetTransform()->GetPosition().x << "   " << entities[0]->GetTransform()->GetPosition().y << "   " << entities[0]->GetTransform()->GetPosition().z << std::endl;
 }
@@ -344,15 +360,21 @@ void Game::Draw(float deltaTime, float totalTime)
 			"dirLight1", // The name of the (eventual) variable in the shader
 			&directional1, // The address of the data to set
 			sizeof(Light)); // The size of the data (the whole struct!) to set
-
 		i->GetMaterial()->GetPixelShader()->SetData(
 			"dirLight2", // The name of the (eventual) variable in the shader
 			&directional2, // The address of the data to set
 			sizeof(Light)); // The size of the data (the whole struct!) to set
-
 		i->GetMaterial()->GetPixelShader()->SetData(
 			"dirLight3", // The name of the (eventual) variable in the shader
 			&directional3, // The address of the data to set
+			sizeof(Light)); // The size of the data (the whole struct!) to set
+		i->GetMaterial()->GetPixelShader()->SetData(
+			"pointLight1", // The name of the (eventual) variable in the shader
+			&point1, // The address of the data to set
+			sizeof(Light)); // The size of the data (the whole struct!) to set
+		i->GetMaterial()->GetPixelShader()->SetData(
+			"pointLight2", // The name of the (eventual) variable in the shader
+			&point2, // The address of the data to set
 			sizeof(Light)); // The size of the data (the whole struct!) to set
 
 		i->Draw(context, camera);
@@ -422,6 +444,8 @@ void Game::UpdateImGui(float deltaTime)
 	ImGui::Text("Below are the controls I am implementing for this simulation. Yippeee!!!");
 	ImGui::Text("");
 
+	/*
+	//Auto generate controls for every entity in the scene
 	if (ImGui::CollapsingHeader("Entity Controls"))
 	{
 		for (int i = 0; i < entities.size(); i++)
@@ -431,7 +455,7 @@ void Game::UpdateImGui(float deltaTime)
 
 			//Edit position
 			XMFLOAT3 pos = entities[i]->GetTransform()->GetPosition();
-			if (ImGui::DragFloat3("Position:", &pos.x, 0.05f))
+			if (ImGui::DragFloat3("Position", &pos.x, 0.05f))
 			{
 				// Something changed, so overwrite the transform’s data
 				entities[i]->GetTransform()->SetPosition(pos.x, pos.y, pos.z);
@@ -439,6 +463,39 @@ void Game::UpdateImGui(float deltaTime)
 
 			ImGui::PopID();
 			ImGui::Text("");
+		}
+	}
+	*/
+
+	ImGui::Text("");
+	if (ImGui::CollapsingHeader("Point Light Controls"))
+	{
+		ImGui::Text("Point Light 1");
+		XMFLOAT3 pos1 = point1.position;
+		if (ImGui::DragFloat3("Position##1", &pos1.x, 0.05f))
+		{
+			// Something changed, so overwrite the transform’s data
+			point1.position = XMFLOAT3(pos1.x, pos1.y, pos1.z);
+		}
+		XMFLOAT3 col1 = point1.color;
+		if (ImGui::DragFloat3("Color##1", &col1.x, 0.01f, 0.0f, 1.0f))
+		{
+			// Something changed, so overwrite the transform’s data
+			point1.color = XMFLOAT3(col1.x, col1.y, col1.z);
+		}
+
+		ImGui::Text("Point Light 2");
+		XMFLOAT3 pos2 = point2.position;
+		if (ImGui::DragFloat3("Position##2", &pos2.x, 0.05f))
+		{
+			// Something changed, so overwrite the transform’s data
+			point2.position = XMFLOAT3(pos2.x, pos2.y, pos2.z);
+		}
+		XMFLOAT3 col2 = point2.color;
+		if (ImGui::DragFloat3("Color##2", &col2.x, 0.01f, 0.0f, 1.0f))
+		{
+			// Something changed, so overwrite the transform’s data
+			point2.color = XMFLOAT3(col2.x, col2.y, col2.z);
 		}
 	}
 
