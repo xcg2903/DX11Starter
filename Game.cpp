@@ -7,6 +7,7 @@
 #include "Camera.h"
 #include "SimpleShader.h"
 #include "Material.h"
+#include "Lights.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
@@ -21,33 +22,6 @@ using namespace std;
 
 // For the DirectX Math library
 using namespace DirectX;
-
-//Variables for testing
-std::shared_ptr<Mesh> triangle;
-std::shared_ptr<Mesh> square;
-std::shared_ptr<Mesh> octagon;
-
-std::vector<std::shared_ptr<GameEntity>> entities;
-
-std::shared_ptr<Camera> camera;
-
-std::shared_ptr<Material> mat1;
-std::shared_ptr<Material> mat2;
-std::shared_ptr<Material> mat3;
-std::shared_ptr<Material> customMat;
-
-std::shared_ptr<Mesh> cube;
-std::shared_ptr<Mesh> cylinder;
-std::shared_ptr<Mesh> helix;
-std::shared_ptr<Mesh> quad;
-std::shared_ptr<Mesh> quaddouble;
-std::shared_ptr<Mesh> sphere;
-std::shared_ptr<Mesh> torus;
-
-std::shared_ptr<SimplePixelShader> customPixelShader;
-
-XMFLOAT3 ambientColor = XMFLOAT3(0.0f, 0.1f, 0.25f);
-
 
 // --------------------------------------------------------
 // Constructor
@@ -129,6 +103,28 @@ void Game::Init()
 
 	//Create Camera
 	camera = std::make_shared<Camera>(float(windowWidth / windowHeight));
+
+	//Lighting
+	ambientColor = XMFLOAT3(0.0f, 0.1f, 0.25f);
+
+	//Yellow
+	directional1 = {};
+	directional1.type = LIGHT_TYPE_DIRECTIONAL;
+	directional1.direction = XMFLOAT3(0.0, -1.0, 1.0);
+	directional1.color = XMFLOAT3(1.0, 1.0, 0.0);
+	directional1.intensity = 1.0f;
+	//Magenta
+	directional2 = {};
+	directional2.type = LIGHT_TYPE_DIRECTIONAL;
+	directional2.direction = XMFLOAT3(1.0, -1.0, 0.0);
+	directional2.color = XMFLOAT3(1.0, 0.0, 1.0);
+	directional2.intensity = 1.0f;
+	//Cyan
+	directional3 = {};
+	directional3.type = LIGHT_TYPE_DIRECTIONAL;
+	directional3.direction = XMFLOAT3(-1.0, -1.0, 0.0);
+	directional3.color = XMFLOAT3(0.0, 1.0, 1.0);
+	directional3.intensity = 1.0f;
 
 	// Initialize ImGui itself & platform/renderer backends
 	IMGUI_CHECKVERSION();
@@ -256,9 +252,9 @@ void Game::CreateGeometry()
 	//Game entities
 	std::shared_ptr<GameEntity> entity1 = std::make_shared<GameEntity>(cube, mat1);
 	std::shared_ptr<GameEntity> entity2 = std::make_shared<GameEntity>(cylinder, mat2);
-	std::shared_ptr<GameEntity> entity3 = std::make_shared<GameEntity>(helix, customMat);
+	std::shared_ptr<GameEntity> entity3 = std::make_shared<GameEntity>(helix, mat3);
 	std::shared_ptr<GameEntity> entity4 = std::make_shared<GameEntity>(quad, mat2);
-	std::shared_ptr<GameEntity> entity5 = std::make_shared<GameEntity>(quaddouble, mat1);
+	std::shared_ptr<GameEntity> entity5 = std::make_shared<GameEntity>(quaddouble, customMat);
 	std::shared_ptr<GameEntity> entity6 = std::make_shared<GameEntity>(sphere, mat1);
 	std::shared_ptr<GameEntity> entity7 = std::make_shared<GameEntity>(torus, mat1);
 
@@ -343,6 +339,22 @@ void Game::Draw(float deltaTime, float totalTime)
 	for (auto& i : entities)
 	{
 		i->GetMaterial()->GetPixelShader()->SetFloat3("ambient", ambientColor); //Send world ambient to shader
+
+		i->GetMaterial()->GetPixelShader()->SetData(
+			"dirLight1", // The name of the (eventual) variable in the shader
+			&directional1, // The address of the data to set
+			sizeof(Light)); // The size of the data (the whole struct!) to set
+
+		i->GetMaterial()->GetPixelShader()->SetData(
+			"dirLight2", // The name of the (eventual) variable in the shader
+			&directional2, // The address of the data to set
+			sizeof(Light)); // The size of the data (the whole struct!) to set
+
+		i->GetMaterial()->GetPixelShader()->SetData(
+			"dirLight3", // The name of the (eventual) variable in the shader
+			&directional3, // The address of the data to set
+			sizeof(Light)); // The size of the data (the whole struct!) to set
+
 		i->Draw(context, camera);
 	}
 

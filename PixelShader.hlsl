@@ -7,6 +7,32 @@ cbuffer ExternalData : register(b0)
 	float3 cameraPos;
 	float roughness;
 	float3 ambient;
+	Light dirLight1;
+	Light dirLight2;
+	Light dirLight3;
+}
+
+float3 diffuse(
+	float3 normal,
+	float3 negateDirection) 
+{
+	float3 diff = dot(normal, negateDirection); //Compare light direction to surface normal
+	diff = saturate(diff); //Prevent negatives
+
+	return diff;
+}
+
+float3 phong(
+	float3 incomingLightDirection,
+	float specExponent,
+	float3 normal,
+	float3 worldPosition)
+{
+	float3 viewV = normalize(cameraPos - worldPosition); //View direction
+	float3 reflectionV = reflect(normalize(incomingLightDirection), normal); //Direction of a perfect reflection
+	float3 spec = pow(saturate(dot(reflectionV, viewV)), MAX_SPECULAR_EXPONENT); //Compare view and reflection directions
+
+	return spec;
 }
 
 // --------------------------------------------------------
@@ -20,15 +46,42 @@ cbuffer ExternalData : register(b0)
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
+	//Variables
+	float3 finalColor;
+	float3 surfaceColor = float3(0.5, 0.5, 0.5);
+	//float3 surfaceColor = float3(cos(input.screenPosition.x / 8) + sin(input.uv.x * 8), sin(input.screenPosition.x / 8) + cos(input.uv.x * 8), 0.5);
+
 	//Normalize normals
 	input.normal = normalize(input.normal);
+
+	//Negate light direction
+	float3 dirToDirLight1 = normalize(dirLight1.direction * -1);
+	float3 dirToDirLight2 = normalize(dirLight2.direction * -1);
+	float3 dirToDirLight3 = normalize(dirLight3.direction * -1);
+
+	//Light1
+	float3 phong1 = phong(normalize(dirLight1.direction), MAX_SPECULAR_EXPONENT, input.normal, input.worldPosition);
+	float3 diffuse1 = diffuse(input.normal, dirToDirLight1);
+	float3 light1 = (surfaceColor * (diffuse1 + phong1)) * dirLight1.color;
+	//Light2
+	float3 phong2 = phong(normalize(dirLight2.direction), MAX_SPECULAR_EXPONENT, input.normal, input.worldPosition);
+	float3 diffuse2 = diffuse(input.normal, dirToDirLight2);
+	float3 light2 = (surfaceColor * (diffuse2 + phong2)) * dirLight2.color;
+	//Light3
+	float3 phong3 = phong(normalize(dirLight3.direction), MAX_SPECULAR_EXPONENT, input.normal, input.worldPosition);
+	float3 diffuse3 = diffuse(input.normal, dirToDirLight3);
+	float3 light3 = (surfaceColor * (diffuse3 + phong3)) * dirLight3.color;
+
+	//Rendering equation
+	finalColor = light1 + light2 + light3 + (ambient * surfaceColor);
 
 	// Just return the input color
 	// - This color (like most values passing through the rasterizer) is 
 	//   interpolated for each pixel between the corresponding vertices 
 	//   of the triangle we're rendering
 	//return float4(ambient, 1);
-	return float4(input.normal, 1); // This is temporary
+	//return float4(input.normal, 1); // Test Normals
+	return float4(finalColor, 1); // Test light color
 	//return float4(roughness.rrr, 1); //Test Roughness
 	//return float4(input.uv, 0, 1); //Test UV coordinates
 }
