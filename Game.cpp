@@ -198,17 +198,15 @@ void Game::LoadShaders()
 	device->CreateSamplerState(&samplerDesc, samplerState.GetAddressOf());
 
 	//CREATE MATERIALS
-	mat1 = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), pixelShader, vertexShader, 0.1f);
+	mat1 = make_shared<Material>(DirectX::XMFLOAT4(1, 0, 0, 1), pixelShader, vertexShader, 0.9f);
 	mat1->AddTextureSRV("SurfaceTexture", treeColorSRV);
 	mat1->AddTextureSRV("AmbientOcclusion", treeAOSRV);
 	mat1->AddSampler("BasicSampler", samplerState);
-	mat1->PrepareMaterial();
 
-	mat2 = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), pixelShader, vertexShader, 0.9f);
+	mat2 = make_shared<Material>(DirectX::XMFLOAT4(0, 1, 0, 1), pixelShader, vertexShader, 0.1f);
 	mat2->AddTextureSRV("SurfaceTexture", bricksColorSRV);
 	mat2->AddTextureSRV("AmbientOcclusion", bricksAOSRV);
 	mat2->AddSampler("BasicSampler", samplerState);
-	mat2->PrepareMaterial();
 
 	customMat = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), customPixelShader, vertexShader, 0.8);
 }

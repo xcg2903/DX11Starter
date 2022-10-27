@@ -36,7 +36,7 @@ float3 phong(
 {
 	float3 viewV = normalize(cameraPos - worldPosition); //View direction
 	float3 reflectionV = reflect(normalize(incomingLightDirection), normal); //Direction of a perfect reflection
-	float3 spec = pow(saturate(dot(reflectionV, viewV)), MAX_SPECULAR_EXPONENT); //Compare view and reflection directions
+	float3 spec = pow(saturate(dot(reflectionV, viewV)), specExponent); //Compare view and reflection directions
 
 	return spec;
 }
@@ -104,7 +104,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 	light5 *= attenuate(pointLight2, input.worldPosition);
 
 	//Rendering equation
-	finalColor = light1 + light2 + light3 + light4 + light5 + (ambient * surfaceColor);
+	finalColor = light2 + light3 + light4 + light5 + (ambient * surfaceColor);
 
 	// Just return the input color
 	// - This color (like most values passing through the rasterizer) is 

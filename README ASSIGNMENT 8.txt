@@ -1,0 +1,2 @@
+For Assignment 8 I implemented Ambient Occlusion. I added a second global variable to pass into the pixel shader and then multipled
+the red channel of the ambient texture by the total color to alter the light level based on the new image.
