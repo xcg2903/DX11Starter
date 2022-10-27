@@ -9,6 +9,8 @@
 #include "Material.h"
 #include "Lights.h"
 
+#include "WICTextureLoader.h"
+
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
@@ -170,6 +172,27 @@ void Game::LoadShaders()
 	customPixelShader = make_shared<SimplePixelShader>(device, context,
 		FixPath(L"CustomTestShader.cso").c_str());
 
+
+	//LOAD TEXTURES
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> treeSRV; //Reference for shader
+	DirectX::CreateWICTextureFromFile( //Tree Texture
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/Texture/bark_brown_02_diff_4k.jpg").c_str(),
+		0,
+		treeSRV.GetAddressOf());
+
+	//Define sampler state
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	samplerDesc.MaxAnisotropy = 8;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	device->CreateSamplerState(&samplerDesc, samplerState.GetAddressOf());
+
+
 	//CREATE MATERIALS
 	mat1 = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 0, 1), pixelShader, vertexShader, 0.2);
 	mat2 = make_shared<Material>(DirectX::XMFLOAT4(0, 1, 1, 1), pixelShader, vertexShader, 0.4);
@@ -255,13 +278,17 @@ void Game::CreateGeometry()
 	//square = std::make_shared<Mesh>(verticesSquare, ARRAYSIZE(verticesSquare), indicesSquare, ARRAYSIZE(indicesSquare), device, context);
 	//octagon = std::make_shared<Mesh>(verticesOct, ARRAYSIZE(verticesOct), indicesOct, ARRAYSIZE(indicesOct), device, context);
 
-	cube = std::make_shared<Mesh>(R"(Assets/cube.obj)", device, context);
-	cylinder = std::make_shared<Mesh>(R"(Assets/cylinder.obj)", device, context);
-	helix = std::make_shared<Mesh>(R"(Assets/helix.obj)", device, context);
-	quad = std::make_shared<Mesh>(R"(Assets/quad.obj)", device, context);
-	quaddouble = std::make_shared<Mesh>(R"(Assets/quad_double_sided.obj)", device, context);
-	sphere = std::make_shared<Mesh>(R"(Assets/sphere.obj)", device, context);
-	torus = std::make_shared<Mesh>(R"(Assets/torus.obj)", device, context);
+	wstring test; 
+	test = FixPath(L"../../Assets/Texture/bark_brown_02_diff_4k.jpg").c_str();
+	std::cout << "" R"(test)" << std::endl;
+
+	cube = std::make_shared<Mesh>(R"(Assets/Mesh/cube.obj)", device, context);
+	cylinder = std::make_shared<Mesh>(R"(Assets/Mesh/cylinder.obj)", device, context);
+	helix = std::make_shared<Mesh>(R"(Assets/Mesh/helix.obj)", device, context);
+	quad = std::make_shared<Mesh>(R"(Assets/Mesh/quad.obj)", device, context);
+	quaddouble = std::make_shared<Mesh>(R"(Assets/Mesh/quad_double_sided.obj)", device, context);
+	sphere = std::make_shared<Mesh>(R"(Assets/Mesh/sphere.obj)", device, context);
+	torus = std::make_shared<Mesh>(R"(Assets/Mesh/torus.obj)", device, context);
 
 	//Game entities
 	std::shared_ptr<GameEntity> entity1 = std::make_shared<GameEntity>(cube, mat1);

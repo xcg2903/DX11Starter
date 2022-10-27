@@ -2,6 +2,7 @@
 
 #include <DirectXMath.h>
 #include <iostream>
+#include <unordered_map>
 #include "SimpleShader.h"
 
 class Material
@@ -27,5 +28,9 @@ private:
 	std::shared_ptr<SimplePixelShader> pixelShader;
 	std::shared_ptr<SimpleVertexShader> vertexShader;
 	float roughness;
+
+	//Will use strings as keys to reference various textures/samplers a given material will need
+	std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> textureSRVs;
+	std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D11SamplerState>> samplers;
 };
 
