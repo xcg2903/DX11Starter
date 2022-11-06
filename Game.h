@@ -81,6 +81,7 @@ private:
 	Light directional3;
 	Light point1;
 	Light point2;
+	Light point3;
 
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
 

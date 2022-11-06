@@ -12,10 +12,12 @@ cbuffer ExternalData : register(b0)
 	Light dirLight3;
 	Light pointLight1;
 	Light pointLight2;
+	Light pointLight3;
 }
 
 Texture2D SurfaceTexture : register(t0); // "t" registers for textures
 Texture2D AmbientOcclusion : register(t1);
+Texture2D NormalMap : register(t2); 
 SamplerState BasicSampler : register(s0); // "s" registers for samplers
 
 // --------------------------------------------------------
@@ -29,14 +31,22 @@ SamplerState BasicSampler : register(s0); // "s" registers for samplers
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
-	//Variables
+	//Initial Variable Calculations
 	float3 finalColor;
-	float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv).rgb * AmbientOcclusion.Sample(BasicSampler, input.uv).r; //Sample current pixel of the texture
-	//float3 surfaceColor = float3(cos(input.screenPosition.x / 8) + sin(input.uv.x * 8), sin(input.screenPosition.x / 8) + cos(input.uv.x * 8), 0.5);
+	float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv).rgb;
+	//float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv).rgb * AmbientOcclusion.Sample(BasicSampler, input.uv).r; //Sample current pixel of the texture
 	float expWithRoughness = (1.0f - roughness) * MAX_SPECULAR_EXPONENT;
+	float3 unpackedNormal = NormalMap.Sample(BasicSampler, input.uv).rgb * 2 - 1; //Sample normal map texture using RGB
 
-	//Normalize normals
-	input.normal = normalize(input.normal);
+	//Create TBN Matrix
+	float3 N = normalize(input.normal); // Must be normalized here or before
+	float3 T = normalize(input.tangent); // Must be normalized here or before
+	T = normalize(T - N * dot(T, N)); // Gram-Schmidt assumes T&N are normalized!
+	float3 B = cross(T, N);
+	float3x3 TBN = float3x3(T, B, N);
+
+	//Apply TBN matrix to normal input
+	input.normal = mul(unpackedNormal, TBN); // Note multiplication order!
 
 	//Negate light direction
 	float3 dirToDirLight1 = normalize(dirLight1.direction * -1);
@@ -72,9 +82,16 @@ float4 main(VertexToPixel input) : SV_TARGET
 	float3 diffuse5 = diffuse(input.normal, dirToPointLight2);
 	float3 light5 = (surfaceColor * (diffuse5 + phong5)) * pointLight2.color;
 	light5 *= attenuate(pointLight2, input.worldPosition);
+	//Light 6
+	float3 point3Dir = input.worldPosition - pointLight3.position; //Calulate from this point to point light
+	float3 dirToPointLight3 = normalize(point3Dir * -1);
+	float3 phong6 = phong(normalize(point3Dir), expWithRoughness, input.normal, input.worldPosition, cameraPos);
+	float3 diffuse6 = diffuse(input.normal, dirToPointLight3);
+	float3 light6 = (surfaceColor * (diffuse6 + phong6)) * pointLight3.color;
+	light6 *= attenuate(pointLight3, input.worldPosition);
 
 	//Rendering equation
-	finalColor = light1 + light2 + light3 + light4 + light5 + (ambient * surfaceColor);
+	finalColor = light1 + light4 + light5 + light6 + (ambient * surfaceColor);
 
 	// Just return the input color
 	// - This color (like most values passing through the rasterizer) is 

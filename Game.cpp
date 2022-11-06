@@ -127,20 +127,27 @@ void Game::Init()
 	directional3.direction = XMFLOAT3(-1.0, -1.0, 0.0);
 	directional3.color = XMFLOAT3(0.0, 1.0, 1.0);
 	directional3.intensity = 1.0f;
-	//Red Point
+	//Magenta Point
 	point1 = {};
 	point1.type = LIGHT_TYPE_POINT;
-	point1.position = XMFLOAT3(-2.5, -1.0, 4.0);
-	point1.color = XMFLOAT3(1.0, 0.0, 0.0);
+	point1.position = XMFLOAT3(-2.5, 3.0, -2.0);
+	point1.color = XMFLOAT3(1.0, 0.0, 1.0);
 	point1.range = 15.0f;
 	point1.intensity = 2.0f;
-	//Green Point
+	//Blue Point
 	point2 = {};
 	point2.type = LIGHT_TYPE_POINT;
-	point2.position = XMFLOAT3(6.0, -3.0, 0.0);
-	point2.color = XMFLOAT3(0.0, 1.0, 0.0);
+	point2.position = XMFLOAT3(4.0, -2.0, 0.0);
+	point2.color = XMFLOAT3(0.5, 0.5, 1.0);
 	point2.range = 20.0f;
-	point2.intensity = 2.0f;
+	point2.intensity = 3.0f;
+	//White Point
+	point3 = {};
+	point3.type = LIGHT_TYPE_POINT;
+	point3.position = XMFLOAT3(6.0, 2.0, 0.0);
+	point3.color = XMFLOAT3(1.0, 1.0, 1.0);
+	point3.range = 20.0f;
+	point3.intensity = 5.0f;
 
 	// Initialize ImGui itself & platform/renderer backends
 	IMGUI_CHECKVERSION();
@@ -175,17 +182,24 @@ void Game::LoadShaders()
 
 	//LOAD TEXTURES
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> treeColorSRV; //Reference for shader
-	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(),FixPath(L"../../Assets/Texture/Moss002_2K_Color.jpg").c_str(), 0,
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(),FixPath(L"../../Assets/Texture/Leather011_2K_Color.jpg").c_str(), 0,
 		treeColorSRV.GetAddressOf());
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> treeAOSRV; //Reference for shader
 	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/Moss002_2K_AmbientOcclusion.jpg").c_str(), 0,
 		treeAOSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> treeNormalSRV; //Reference for shader
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/Leather011_2K_NormalDX.jpg").c_str(), 0,
+		treeNormalSRV.GetAddressOf());
+
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bricksColorSRV; //Reference for shader
 	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/Bricks078_2K_Color.jpg").c_str(), 0,
 		bricksColorSRV.GetAddressOf());
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bricksAOSRV; //Reference for shader
 	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/Bricks078_2K_AmbientOcclusion.jpg").c_str(), 0,
 		bricksAOSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bricksNormalSRV; //Reference for shader
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/Bricks078_2K_NormalGL.jpg").c_str(), 0,
+		bricksNormalSRV.GetAddressOf());
 
 	//Define sampler state
 	D3D11_SAMPLER_DESC samplerDesc = {};
@@ -201,11 +215,13 @@ void Game::LoadShaders()
 	mat1 = make_shared<Material>(DirectX::XMFLOAT4(1, 0, 0, 1), pixelShader, vertexShader, 0.9f);
 	mat1->AddTextureSRV("SurfaceTexture", treeColorSRV);
 	mat1->AddTextureSRV("AmbientOcclusion", treeAOSRV);
+	mat1->AddTextureSRV("NormalMap", treeNormalSRV);
 	mat1->AddSampler("BasicSampler", samplerState);
 
-	mat2 = make_shared<Material>(DirectX::XMFLOAT4(0, 1, 0, 1), pixelShader, vertexShader, 0.1f);
+	mat2 = make_shared<Material>(DirectX::XMFLOAT4(0, 1, 0, 1), pixelShader, vertexShader, 0.7f);
 	mat2->AddTextureSRV("SurfaceTexture", bricksColorSRV);
 	mat2->AddTextureSRV("AmbientOcclusion", bricksAOSRV);
+	mat2->AddTextureSRV("NormalMap", bricksNormalSRV);
 	mat2->AddSampler("BasicSampler", samplerState);
 
 	customMat = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), customPixelShader, vertexShader, 0.8);
@@ -257,11 +273,11 @@ void Game::CreateGeometry()
 	torus = std::make_shared<Mesh>(R"(Assets/Mesh/torus.obj)", device, context);
 
 	//Game entities
-	std::shared_ptr<GameEntity> entity1 = std::make_shared<GameEntity>(cube, mat1);
+	std::shared_ptr<GameEntity> entity1 = std::make_shared<GameEntity>(cube, mat2);
 	std::shared_ptr<GameEntity> entity2 = std::make_shared<GameEntity>(cylinder, mat2);
 	std::shared_ptr<GameEntity> entity3 = std::make_shared<GameEntity>(helix, mat1);
-	std::shared_ptr<GameEntity> entity4 = std::make_shared<GameEntity>(quad, mat2);
-	std::shared_ptr<GameEntity> entity5 = std::make_shared<GameEntity>(quaddouble, mat2);
+	std::shared_ptr<GameEntity> entity4 = std::make_shared<GameEntity>(quad, mat1);
+	std::shared_ptr<GameEntity> entity5 = std::make_shared<GameEntity>(quaddouble, mat1);
 	std::shared_ptr<GameEntity> entity6 = std::make_shared<GameEntity>(sphere, mat1);
 	std::shared_ptr<GameEntity> entity7 = std::make_shared<GameEntity>(torus, mat1);
 
@@ -317,13 +333,14 @@ void Game::Update(float deltaTime, float totalTime)
 		Quit();
 
 	//Move
-	entities[0]->GetTransform()->SetPosition(-9, (sin(totalTime + 0.1) * 4), 0);
-	entities[1]->GetTransform()->SetPosition(-6, (sin(totalTime + 0.2) * 4), 0);
-	entities[2]->GetTransform()->SetPosition(-3, (sin(totalTime + 0.3) * 4), 0);
-	entities[3]->GetTransform()->SetPosition(0,  (sin(totalTime + 0.4) * 4), 0);
-	entities[4]->GetTransform()->SetPosition(3,  (sin(totalTime + 0.5) * 4), 0);
-	entities[5]->GetTransform()->SetPosition(6,  (sin(totalTime + 0.6) * 4), 0);
-	entities[6]->GetTransform()->SetPosition(9,  (sin(totalTime + 0.7) * 4), 0);
+	float speed = 1.0f;
+	entities[0]->GetTransform()->SetPosition(-9, (sin(totalTime + 0.1) * speed), 0);
+	entities[1]->GetTransform()->SetPosition(-6, (sin(totalTime + 0.2) * speed), 0);
+	entities[2]->GetTransform()->SetPosition(-3, (sin(totalTime + 0.3) * speed), 0);
+	entities[3]->GetTransform()->SetPosition(0,  (sin(totalTime + 0.4) * speed), 0);
+	entities[4]->GetTransform()->SetPosition(3,  (sin(totalTime + 0.5) * speed), 0);
+	entities[5]->GetTransform()->SetPosition(6,  (sin(totalTime + 0.6) * speed), 0);
+	entities[6]->GetTransform()->SetPosition(9,  (sin(totalTime + 0.7) * speed), 0);
 }
 
 // --------------------------------------------------------
@@ -366,6 +383,10 @@ void Game::Draw(float deltaTime, float totalTime)
 		i->GetMaterial()->GetPixelShader()->SetData(
 			"pointLight2", // The name of the (eventual) variable in the shader
 			&point2, // The address of the data to set
+			sizeof(Light)); // The size of the data (the whole struct!) to set
+		i->GetMaterial()->GetPixelShader()->SetData(
+			"pointLight3", // The name of the (eventual) variable in the shader
+			&point3, // The address of the data to set
 			sizeof(Light)); // The size of the data (the whole struct!) to set
 
 		i->Draw(context, camera);
