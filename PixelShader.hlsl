@@ -14,6 +14,40 @@ cbuffer ExternalData : register(b0)
 	Light pointLight2;
 }
 
+Texture2D SurfaceTexture : register(t0); // "t" registers for textures
+Texture2D AmbientOcclusion : register(t1);
+SamplerState BasicSampler : register(s0); // "s" registers for samplers
+
+float3 diffuse(
+	float3 normal,
+	float3 negateDirection) 
+{
+	float3 diff = dot(normal, negateDirection); //Compare light direction to surface normal
+	diff = saturate(diff); //Prevent negatives
+
+	return diff;
+}
+
+float3 phong(
+	float3 incomingLightDirection,
+	float specExponent,
+	float3 normal,
+	float3 worldPosition)
+{
+	float3 viewV = normalize(cameraPos - worldPosition); //View direction
+	float3 reflectionV = reflect(normalize(incomingLightDirection), normal); //Direction of a perfect reflection
+	float3 spec = pow(saturate(dot(reflectionV, viewV)), MAX_SPECULAR_EXPONENT); //Compare view and reflection directions
+
+	return spec;
+}
+
+float attenuate(Light light, float3 worldPos)
+{
+	float dist = distance(light.position, worldPos);
+	float att = saturate(1.0f - (dist * dist / (light.range * light.range)));
+	return att * att;
+}
+
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
 // 
@@ -70,7 +104,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 	light5 *= attenuate(pointLight2, input.worldPosition);
 
 	//Rendering equation
-	finalColor = light2 + light3 + light4 + light5 + (ambient * surfaceColor);
+	finalColor = light1 + light2 + light3 + light4 + light5 + (ambient * surfaceColor);
 
 	// Just return the input color
 	// - This color (like most values passing through the rasterizer) is 

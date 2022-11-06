@@ -54,7 +54,7 @@ float3 phong(
 {
 	float3 viewV = normalize(cameraPos - worldPosition); //View direction
 	float3 reflectionV = reflect(normalize(incomingLightDirection), normal); //Direction of a perfect reflection
-	float3 spec = pow(saturate(dot(reflectionV, viewV)), MAX_SPECULAR_EXPONENT); //Compare view and reflection directions
+	float3 spec = pow(saturate(dot(reflectionV, viewV)), specExponent); //Compare view and reflection directions
 
 	return spec;
 }
