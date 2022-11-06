@@ -18,36 +18,6 @@ Texture2D SurfaceTexture : register(t0); // "t" registers for textures
 Texture2D AmbientOcclusion : register(t1);
 SamplerState BasicSampler : register(s0); // "s" registers for samplers
 
-float3 diffuse(
-	float3 normal,
-	float3 negateDirection) 
-{
-	float3 diff = dot(normal, negateDirection); //Compare light direction to surface normal
-	diff = saturate(diff); //Prevent negatives
-
-	return diff;
-}
-
-float3 phong(
-	float3 incomingLightDirection,
-	float specExponent,
-	float3 normal,
-	float3 worldPosition)
-{
-	float3 viewV = normalize(cameraPos - worldPosition); //View direction
-	float3 reflectionV = reflect(normalize(incomingLightDirection), normal); //Direction of a perfect reflection
-	float3 spec = pow(saturate(dot(reflectionV, viewV)), MAX_SPECULAR_EXPONENT); //Compare view and reflection directions
-
-	return spec;
-}
-
-float attenuate(Light light, float3 worldPos)
-{
-	float dist = distance(light.position, worldPos);
-	float att = saturate(1.0f - (dist * dist / (light.range * light.range)));
-	return att * att;
-}
-
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
 // 
@@ -75,15 +45,15 @@ float4 main(VertexToPixel input) : SV_TARGET
 
 	//DIRECTIONAL LIGHTS
 	//Light1
-	float3 phong1 = phong(normalize(dirLight1.direction), expWithRoughness, input.normal, input.worldPosition);
+	float3 phong1 = phong(normalize(dirLight1.direction), expWithRoughness, input.normal, input.worldPosition, cameraPos);
 	float3 diffuse1 = diffuse(input.normal, dirToDirLight1);
 	float3 light1 = (surfaceColor * (diffuse1 + phong1)) * dirLight1.color;
 	//Light2
-	float3 phong2 = phong(normalize(dirLight2.direction), expWithRoughness, input.normal, input.worldPosition);
+	float3 phong2 = phong(normalize(dirLight2.direction), expWithRoughness, input.normal, input.worldPosition, cameraPos);
 	float3 diffuse2 = diffuse(input.normal, dirToDirLight2);
 	float3 light2 = (surfaceColor * (diffuse2 + phong2)) * dirLight2.color;
 	//Light3
-	float3 phong3 = phong(normalize(dirLight3.direction), expWithRoughness, input.normal, input.worldPosition);
+	float3 phong3 = phong(normalize(dirLight3.direction), expWithRoughness, input.normal, input.worldPosition, cameraPos);
 	float3 diffuse3 = diffuse(input.normal, dirToDirLight3);
 	float3 light3 = (surfaceColor * (diffuse3 + phong3)) * dirLight3.color;
 
@@ -91,14 +61,14 @@ float4 main(VertexToPixel input) : SV_TARGET
 	//Light 4
 	float3 point1Dir = input.worldPosition - pointLight1.position; //Calulate from this point to point light
 	float3 dirToPointLight1 = normalize(point1Dir * -1);
-	float3 phong4 = phong(normalize(point1Dir), expWithRoughness, input.normal, input.worldPosition);
+	float3 phong4 = phong(normalize(point1Dir), expWithRoughness, input.normal, input.worldPosition, cameraPos);
 	float3 diffuse4 = diffuse(input.normal, dirToPointLight1);
 	float3 light4 = (surfaceColor * (diffuse4 + phong4)) * pointLight1.color;
 	light4 *= attenuate(pointLight1, input.worldPosition);
 	//Light 5
 	float3 point2Dir = input.worldPosition - pointLight2.position; //Calulate from this point to point light
 	float3 dirToPointLight2 = normalize(point2Dir * -1);
-	float3 phong5 = phong(normalize(point2Dir), expWithRoughness, input.normal, input.worldPosition);
+	float3 phong5 = phong(normalize(point2Dir), expWithRoughness, input.normal, input.worldPosition, cameraPos);
 	float3 diffuse5 = diffuse(input.normal, dirToPointLight2);
 	float3 light5 = (surfaceColor * (diffuse5 + phong5)) * pointLight2.color;
 	light5 *= attenuate(pointLight2, input.worldPosition);
