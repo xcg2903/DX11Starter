@@ -39,6 +39,9 @@ void GameEntity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContext,
 	material->GetVertexShader()->SetShader();
 	material->GetPixelShader()->SetShader();
 
+	//Set up material with texture
+	material->PrepareMaterial();
+
 	//Define what the shaders will do, now using SimpleShader and our Material!
 	std::shared_ptr<SimpleVertexShader> vs = material->GetVertexShader();
 	std::shared_ptr<SimplePixelShader> ps = material->GetPixelShader();

@@ -27,8 +27,9 @@ float4 main(VertexToPixel input) : SV_TARGET
 {
 	//Variables
 	float3 finalColor;
-	float3 surfaceColor = float3(0.5, 0.5, 0.5);
+	float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv).rgb * AmbientOcclusion.Sample(BasicSampler, input.uv).r; //Sample current pixel of the texture
 	//float3 surfaceColor = float3(cos(input.screenPosition.x / 8) + sin(input.uv.x * 8), sin(input.screenPosition.x / 8) + cos(input.uv.x * 8), 0.5);
+	float expWithRoughness = (1.0f - roughness) * MAX_SPECULAR_EXPONENT;
 
 	//Normalize normals
 	input.normal = normalize(input.normal);
@@ -40,15 +41,15 @@ float4 main(VertexToPixel input) : SV_TARGET
 
 	//DIRECTIONAL LIGHTS
 	//Light1
-	float3 phong1 = phong(normalize(dirLight1.direction), MAX_SPECULAR_EXPONENT, input.normal, input.worldPosition, cameraPos);
+	float3 phong1 = phong(normalize(dirLight1.direction), expWithRoughness, input.normal, input.worldPosition);
 	float3 diffuse1 = diffuse(input.normal, dirToDirLight1);
 	float3 light1 = (surfaceColor * (diffuse1 + phong1)) * dirLight1.color;
 	//Light2
-	float3 phong2 = phong(normalize(dirLight2.direction), MAX_SPECULAR_EXPONENT, input.normal, input.worldPosition, cameraPos);
+	float3 phong2 = phong(normalize(dirLight2.direction), expWithRoughness, input.normal, input.worldPosition);
 	float3 diffuse2 = diffuse(input.normal, dirToDirLight2);
 	float3 light2 = (surfaceColor * (diffuse2 + phong2)) * dirLight2.color;
 	//Light3
-	float3 phong3 = phong(normalize(dirLight3.direction), MAX_SPECULAR_EXPONENT, input.normal, input.worldPosition, cameraPos);
+	float3 phong3 = phong(normalize(dirLight3.direction), expWithRoughness, input.normal, input.worldPosition);
 	float3 diffuse3 = diffuse(input.normal, dirToDirLight3);
 	float3 light3 = (surfaceColor * (diffuse3 + phong3)) * dirLight3.color;
 
@@ -56,20 +57,20 @@ float4 main(VertexToPixel input) : SV_TARGET
 	//Light 4
 	float3 point1Dir = input.worldPosition - pointLight1.position; //Calulate from this point to point light
 	float3 dirToPointLight1 = normalize(point1Dir * -1);
-	float3 phong4 = phong(normalize(point1Dir), MAX_SPECULAR_EXPONENT, input.normal, input.worldPosition, cameraPos);
+	float3 phong4 = phong(normalize(point1Dir), expWithRoughness, input.normal, input.worldPosition);
 	float3 diffuse4 = diffuse(input.normal, dirToPointLight1);
 	float3 light4 = (surfaceColor * (diffuse4 + phong4)) * pointLight1.color;
 	light4 *= attenuate(pointLight1, input.worldPosition);
 	//Light 5
 	float3 point2Dir = input.worldPosition - pointLight2.position; //Calulate from this point to point light
 	float3 dirToPointLight2 = normalize(point2Dir * -1);
-	float3 phong5 = phong(normalize(point2Dir), MAX_SPECULAR_EXPONENT, input.normal, input.worldPosition, cameraPos);
+	float3 phong5 = phong(normalize(point2Dir), expWithRoughness, input.normal, input.worldPosition);
 	float3 diffuse5 = diffuse(input.normal, dirToPointLight2);
 	float3 light5 = (surfaceColor * (diffuse5 + phong5)) * pointLight2.color;
 	light5 *= attenuate(pointLight2, input.worldPosition);
 
 	//Rendering equation
-	finalColor = light1 + light2 + light3 + light4 + light5 + (ambient * surfaceColor);
+	finalColor = light2 + light3 + light4 + light5 + (ambient * surfaceColor);
 
 	// Just return the input color
 	// - This color (like most values passing through the rasterizer) is 

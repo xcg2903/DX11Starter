@@ -174,13 +174,18 @@ void Game::LoadShaders()
 
 
 	//LOAD TEXTURES
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> treeSRV; //Reference for shader
-	DirectX::CreateWICTextureFromFile( //Tree Texture
-		device.Get(),
-		context.Get(),
-		FixPath(L"../../Assets/Texture/bark_brown_02_diff_4k.jpg").c_str(),
-		0,
-		treeSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> treeColorSRV; //Reference for shader
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(),FixPath(L"../../Assets/Texture/Moss002_2K_Color.jpg").c_str(), 0,
+		treeColorSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> treeAOSRV; //Reference for shader
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/Moss002_2K_AmbientOcclusion.jpg").c_str(), 0,
+		treeAOSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bricksColorSRV; //Reference for shader
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/Bricks078_2K_Color.jpg").c_str(), 0,
+		bricksColorSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bricksAOSRV; //Reference for shader
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/Bricks078_2K_AmbientOcclusion.jpg").c_str(), 0,
+		bricksAOSRV.GetAddressOf());
 
 	//Define sampler state
 	D3D11_SAMPLER_DESC samplerDesc = {};
@@ -192,11 +197,17 @@ void Game::LoadShaders()
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	device->CreateSamplerState(&samplerDesc, samplerState.GetAddressOf());
 
-
 	//CREATE MATERIALS
-	mat1 = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 0, 1), pixelShader, vertexShader, 0.2);
-	mat2 = make_shared<Material>(DirectX::XMFLOAT4(0, 1, 1, 1), pixelShader, vertexShader, 0.4);
-	mat3 = make_shared<Material>(DirectX::XMFLOAT4(1, 0, 1, 1), pixelShader, vertexShader, 0.6);
+	mat1 = make_shared<Material>(DirectX::XMFLOAT4(1, 0, 0, 1), pixelShader, vertexShader, 0.9f);
+	mat1->AddTextureSRV("SurfaceTexture", treeColorSRV);
+	mat1->AddTextureSRV("AmbientOcclusion", treeAOSRV);
+	mat1->AddSampler("BasicSampler", samplerState);
+
+	mat2 = make_shared<Material>(DirectX::XMFLOAT4(0, 1, 0, 1), pixelShader, vertexShader, 0.1f);
+	mat2->AddTextureSRV("SurfaceTexture", bricksColorSRV);
+	mat2->AddTextureSRV("AmbientOcclusion", bricksAOSRV);
+	mat2->AddSampler("BasicSampler", samplerState);
+
 	customMat = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), customPixelShader, vertexShader, 0.8);
 }
 
@@ -232,51 +243,6 @@ void Game::CreateGeometry()
 	//    knowing the exact size (in pixels) of the image/window/etc.  
 	// - Long story short: Resizing the window also resizes the triangle,
 	//    since we're describing the triangle in terms of the window itself
-	
-	//Initalize Vertex Arrays
-	Vertex verticesTriangle[] =
-	{
-		{ XMFLOAT3(+0.5f, +0.7f, +0.0f), normal, uv },
-		{ XMFLOAT3(+0.7f, +0.2f, +0.0f), normal, uv },
-		{ XMFLOAT3(+0.3f, +0.2f, +0.0f), normal, uv },
-	};
-	/*
-	Vertex verticesSquare[] =
-	{
-		{ XMFLOAT3(-0.7f, +0.7f, +0.0f), yellow },
-		{ XMFLOAT3(-0.2f, +0.7f, +0.0f), cyan },
-		{ XMFLOAT3(-0.2f, +0.4f, +0.0f), yellow },
-		{ XMFLOAT3(-0.7f, +0.4f, +0.0f), magenta },
-	};
-	Vertex verticesOct[] =
-	{
-		{ XMFLOAT3(+0.0f, +0.0f, +0.0f), white },
-		{ XMFLOAT3(+0.0f, +0.3f, +0.0f), cyan },
-		{ XMFLOAT3(+0.2f, +0.2f, +0.0f), white },
-		{ XMFLOAT3(+0.3f, +0.0f, +0.0f), magenta },
-		{ XMFLOAT3(+0.2f, -0.2f, +0.0f), white },
-		{ XMFLOAT3(+0.0f, -0.3f, +0.0f), yellow },
-		{ XMFLOAT3(-0.2f, -0.2f, +0.0f), white },
-		{ XMFLOAT3(-0.3f, +0.0f, +0.0f), red },
-		{ XMFLOAT3(-0.2f, +0.2f, +0.0f), white },
-	};
-	*/
-
-	// Set up indices, which tell us which vertices to use and in which order
-	// - This is redundant for just 3 vertices, but will be more useful later
-	// - Indices are technically not required if the vertices are in the buffer 
-	//    in the correct order and each one will be used exactly once
-	// - But just to see how it's done...
-
-	//Initalize Index Arrays
-	unsigned int indicesTriangle[] = { 0, 1, 2 };
-	unsigned int indicesSquare[] = { 0, 1, 2, 0, 2, 3 };
-	unsigned int indicesOct[] = { 0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 5, 0, 5, 6, 0, 6, 7, 0, 7, 8, 0, 8, 1 };
-
-	//Initalize Shared Pointers to meshes
-	//triangle = std::make_shared<Mesh>(verticesTriangle, ARRAYSIZE(verticesTriangle), indicesTriangle, ARRAYSIZE(indicesTriangle), device, context);
-	//square = std::make_shared<Mesh>(verticesSquare, ARRAYSIZE(verticesSquare), indicesSquare, ARRAYSIZE(indicesSquare), device, context);
-	//octagon = std::make_shared<Mesh>(verticesOct, ARRAYSIZE(verticesOct), indicesOct, ARRAYSIZE(indicesOct), device, context);
 
 	wstring test; 
 	test = FixPath(L"../../Assets/Texture/bark_brown_02_diff_4k.jpg").c_str();
@@ -293,7 +259,7 @@ void Game::CreateGeometry()
 	//Game entities
 	std::shared_ptr<GameEntity> entity1 = std::make_shared<GameEntity>(cube, mat1);
 	std::shared_ptr<GameEntity> entity2 = std::make_shared<GameEntity>(cylinder, mat2);
-	std::shared_ptr<GameEntity> entity3 = std::make_shared<GameEntity>(helix, mat3);
+	std::shared_ptr<GameEntity> entity3 = std::make_shared<GameEntity>(helix, mat1);
 	std::shared_ptr<GameEntity> entity4 = std::make_shared<GameEntity>(quad, mat2);
 	std::shared_ptr<GameEntity> entity5 = std::make_shared<GameEntity>(quaddouble, mat2);
 	std::shared_ptr<GameEntity> entity6 = std::make_shared<GameEntity>(sphere, mat1);
@@ -358,8 +324,6 @@ void Game::Update(float deltaTime, float totalTime)
 	entities[4]->GetTransform()->SetPosition(3,  (sin(totalTime + 0.5) * 4), 0);
 	entities[5]->GetTransform()->SetPosition(6,  (sin(totalTime + 0.6) * 4), 0);
 	entities[6]->GetTransform()->SetPosition(9,  (sin(totalTime + 0.7) * 4), 0);
-
-	//std::cout << entities[0]->GetTransform()->GetPosition().x << "   " << entities[0]->GetTransform()->GetPosition().y << "   " << entities[0]->GetTransform()->GetPosition().z << std::endl;
 }
 
 // --------------------------------------------------------
