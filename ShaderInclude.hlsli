@@ -35,4 +35,35 @@ struct VertexToPixel
 	float3 worldPosition	: POSITION;
 };
 
+float3 diffuse(
+	float3 normal,
+	float3 negateDirection)
+{
+	float3 diff = dot(normal, negateDirection); //Compare light direction to surface normal
+	diff = saturate(diff); //Prevent negatives
+
+	return diff;
+}
+
+float3 phong(
+	float3 incomingLightDirection,
+	float specExponent,
+	float3 normal,
+	float3 worldPosition,
+	float3 cameraPos)
+{
+	float3 viewV = normalize(cameraPos - worldPosition); //View direction
+	float3 reflectionV = reflect(normalize(incomingLightDirection), normal); //Direction of a perfect reflection
+	float3 spec = pow(saturate(dot(reflectionV, viewV)), MAX_SPECULAR_EXPONENT); //Compare view and reflection directions
+
+	return spec;
+}
+
+float attenuate(Light light, float3 worldPos)
+{
+	float dist = distance(light.position, worldPos);
+	float att = saturate(1.0f - (dist * dist / (light.range * light.range)));
+	return att * att;
+}
+
 #endif

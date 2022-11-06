@@ -25,6 +25,7 @@ struct VertexShaderInput
 	float3 localPosition	: POSITION;     // XYZ position
 	float3 normal			: NORMAL;        // RGBA color
 	float2 uv				: TEXCOORD;        // RGBA color
+	float3 tangent			: TANGENT;
 };
 
 // --------------------------------------------------------
