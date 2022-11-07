@@ -9,6 +9,7 @@
 #include "SimpleShader.h"
 #include "Material.h"
 #include "Lights.h"
+#include "Sky.h"
 
 #include "DXCore.h"
 #include <DirectXMath.h>
@@ -53,6 +54,17 @@ private:
 	std::shared_ptr<SimpleVertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 
+	std::shared_ptr<SimplePixelShader> skyPixelShader;
+	std::shared_ptr<SimpleVertexShader> skyVertexShader;
+
+	// Helper for creating a cubemap from 6 individual textures
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> CreateCubemap(
+		const wchar_t* right,
+		const wchar_t* left,
+		const wchar_t* up,
+		const wchar_t* down,
+		const wchar_t* front,
+		const wchar_t* back);
 
 	//Variables for testing
 	std::vector<std::shared_ptr<GameEntity>> entities;
@@ -84,6 +96,9 @@ private:
 	Light point3;
 
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
+
+	std::shared_ptr<Sky> sky;
+
 
 };
 
