@@ -133,21 +133,21 @@ void Game::Init()
 	point1.position = XMFLOAT3(-2.5, 3.0, -2.0);
 	point1.color = XMFLOAT3(1.0, 0.0, 1.0);
 	point1.range = 15.0f;
-	point1.intensity = 2.0f;
-	//Blue Point
+	point1.intensity = 1.0f;
+	//Yellow Point
 	point2 = {};
 	point2.type = LIGHT_TYPE_POINT;
 	point2.position = XMFLOAT3(4.0, -2.0, 0.0);
-	point2.color = XMFLOAT3(0.5, 0.5, 1.0);
+	point2.color = XMFLOAT3(1.0, 1.0, 0.0);
 	point2.range = 20.0f;
-	point2.intensity = 3.0f;
+	point2.intensity = 1.0f;
 	//White Point
 	point3 = {};
 	point3.type = LIGHT_TYPE_POINT;
 	point3.position = XMFLOAT3(6.0, 2.0, 0.0);
 	point3.color = XMFLOAT3(1.0, 1.0, 1.0);
 	point3.range = 20.0f;
-	point3.intensity = 5.0f;
+	point3.intensity = 1.0f;
 
 	// Initialize ImGui itself & platform/renderer backends
 	IMGUI_CHECKVERSION();
@@ -196,25 +196,32 @@ void Game::LoadShaders()
 		FixPath(L"../../Assets/Texture/CloudsPink/back.png").c_str());
 
 	//LOAD TEXTURES
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> treeColorSRV; //Reference for shader
-	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(),FixPath(L"../../Assets/Texture/Leather011_2K_Color.jpg").c_str(), 0,
-		treeColorSRV.GetAddressOf());
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> treeAOSRV; //Reference for shader
-	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/Moss002_2K_AmbientOcclusion.jpg").c_str(), 0,
-		treeAOSRV.GetAddressOf());
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> treeNormalSRV; //Reference for shader
-	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/Leather011_2K_NormalDX.jpg").c_str(), 0,
-		treeNormalSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeColorSRV; //Abledo
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(),FixPath(L"../../Assets/Texture/bronze_albedo.png").c_str(), 0,
+		bronzeColorSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeNormalSRV; //Normals
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/bronze_normals.png").c_str(), 0,
+		bronzeNormalSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeRoughSRV; //Roughness
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/bronze_roughness.png").c_str(), 0,
+		bronzeRoughSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeMetalSRV; //Metal
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/bronze_metal.png").c_str(), 0,
+		bronzeMetalSRV.GetAddressOf());
 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bricksColorSRV; //Reference for shader
-	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/Bricks078_2K_Color.jpg").c_str(), 0,
-		bricksColorSRV.GetAddressOf());
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bricksAOSRV; //Reference for shader
-	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/Bricks078_2K_AmbientOcclusion.jpg").c_str(), 0,
-		bricksAOSRV.GetAddressOf());
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bricksNormalSRV; //Reference for shader
-	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/Bricks078_2K_NormalGL.jpg").c_str(), 0,
-		bricksNormalSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> paintColorSRV; //Abledo
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/paint_albedo.png").c_str(), 0,
+		paintColorSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> paintNormalSRV; //Normals
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/paint_normals.png").c_str(), 0,
+		paintNormalSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> paintRoughSRV; //Roughness
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/paint_roughness.png").c_str(), 0,
+		paintRoughSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> paintMetalSRV; //Metal
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/paint_metal.png").c_str(), 0,
+		paintMetalSRV.GetAddressOf());
+
 
 	//Define sampler state
 	D3D11_SAMPLER_DESC samplerDesc = {};
@@ -227,16 +234,18 @@ void Game::LoadShaders()
 	device->CreateSamplerState(&samplerDesc, samplerState.GetAddressOf());
 
 	//CREATE MATERIALS
-	mat1 = make_shared<Material>(DirectX::XMFLOAT4(1, 0, 0, 1), pixelShader, vertexShader, 0.9f);
-	mat1->AddTextureSRV("SurfaceTexture", treeColorSRV);
-	mat1->AddTextureSRV("AmbientOcclusion", treeAOSRV);
-	mat1->AddTextureSRV("NormalMap", treeNormalSRV);
+	mat1 = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), pixelShader, vertexShader, 0.9f);
+	mat1->AddTextureSRV("Albedo", bronzeColorSRV);
+	mat1->AddTextureSRV("NormalMap", bronzeNormalSRV);
+	mat1->AddTextureSRV("RoughnessMap", bronzeRoughSRV);
+	mat1->AddTextureSRV("MetalnessMap", bronzeMetalSRV);
 	mat1->AddSampler("BasicSampler", samplerState);
 
-	mat2 = make_shared<Material>(DirectX::XMFLOAT4(0, 1, 0, 1), pixelShader, vertexShader, 0.7f);
-	mat2->AddTextureSRV("SurfaceTexture", bricksColorSRV);
-	mat2->AddTextureSRV("AmbientOcclusion", bricksAOSRV);
-	mat2->AddTextureSRV("NormalMap", bricksNormalSRV);
+	mat2 = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), pixelShader, vertexShader, 0.9f);
+	mat2->AddTextureSRV("Albedo", paintColorSRV);
+	mat2->AddTextureSRV("NormalMap", paintNormalSRV);
+	mat2->AddTextureSRV("RoughnessMap", paintRoughSRV);
+	mat2->AddTextureSRV("MetalnessMap", paintMetalSRV);
 	mat2->AddSampler("BasicSampler", samplerState);
 
 	customMat = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), customPixelShader, vertexShader, 0.8);
@@ -298,7 +307,7 @@ void Game::CreateGeometry()
 	std::shared_ptr<GameEntity> entity4 = std::make_shared<GameEntity>(quad, mat1);
 	std::shared_ptr<GameEntity> entity5 = std::make_shared<GameEntity>(quaddouble, mat2);
 	std::shared_ptr<GameEntity> entity6 = std::make_shared<GameEntity>(sphere, mat1);
-	std::shared_ptr<GameEntity> entity7 = std::make_shared<GameEntity>(torus, mat1);
+	std::shared_ptr<GameEntity> entity7 = std::make_shared<GameEntity>(torus, mat2);
 
 	entity1->GetTransform()->SetPosition(-9, 0, 0);
 	entity2->GetTransform()->SetPosition(-6, 0, 0);
