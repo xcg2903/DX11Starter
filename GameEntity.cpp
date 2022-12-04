@@ -50,6 +50,7 @@ void GameEntity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContext,
 	ps->SetFloat4("colorTint", material->GetColorTint()); // Strings here MUST
 	ps->SetFloat3("cameraPos", camera->GetTransform().GetPosition());
 	ps->SetFloat("roughness", material->GetRoughness());
+	ps->SetFloat2("uvScale", material->GetUVScale());
 
 	//Vertex Shader References
 	vs->SetMatrix4x4("world", transform.GetWorldMatrix());

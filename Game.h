@@ -75,6 +75,7 @@ private:
 	std::shared_ptr<Material> mat2;
 	std::shared_ptr<Material> mat3;
 	std::shared_ptr<Material> customMat;
+	std::shared_ptr<Material> matFloor;
 
 	std::shared_ptr<Mesh> cube;
 	std::shared_ptr<Mesh> cylinder;

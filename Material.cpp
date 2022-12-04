@@ -6,12 +6,14 @@ using namespace std;
 Material::Material(DirectX::XMFLOAT4 colorTint, 
 	shared_ptr<SimplePixelShader> pixelShader,
 	shared_ptr<SimpleVertexShader> vertexShader,
-	float roughness)
+	float roughness,
+	DirectX::XMFLOAT2 uvScale)
 {
 	this->colorTint = colorTint;
 	this->pixelShader = pixelShader;
 	this->vertexShader = vertexShader;
 	this->roughness = roughness;
+	this->uvScale = uvScale;
 }
 
 Material::~Material()
@@ -38,6 +40,11 @@ float Material::GetRoughness()
 	return roughness;
 }
 
+DirectX::XMFLOAT2 Material::GetUVScale()
+{
+	return uvScale;
+}
+
 void Material::SetPixelShader(shared_ptr<SimplePixelShader> pixelShader)
 {
 	this->pixelShader = pixelShader;
@@ -51,6 +58,11 @@ void Material::SetVertexShader(shared_ptr<SimpleVertexShader> vertexShader)
 void Material::SetColorTint(DirectX::XMFLOAT4 colorTint)
 {
 	this->colorTint = colorTint;
+}
+
+void Material::SetUVScale(DirectX::XMFLOAT2 uvScale)
+{
+	this->uvScale = uvScale;
 }
 
 void Material::AddTextureSRV(string name, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv)

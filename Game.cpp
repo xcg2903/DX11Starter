@@ -234,21 +234,28 @@ void Game::LoadShaders()
 	device->CreateSamplerState(&samplerDesc, samplerState.GetAddressOf());
 
 	//CREATE MATERIALS
-	mat1 = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), pixelShader, vertexShader, 0.9f);
+	mat1 = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), pixelShader, vertexShader, 0.9f, DirectX::XMFLOAT2(1, 1));
 	mat1->AddTextureSRV("Albedo", bronzeColorSRV);
 	mat1->AddTextureSRV("NormalMap", bronzeNormalSRV);
 	mat1->AddTextureSRV("RoughnessMap", bronzeRoughSRV);
 	mat1->AddTextureSRV("MetalnessMap", bronzeMetalSRV);
 	mat1->AddSampler("BasicSampler", samplerState);
 
-	mat2 = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), pixelShader, vertexShader, 0.9f);
+	mat2 = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), pixelShader, vertexShader, 0.9f, DirectX::XMFLOAT2(1, 1));
 	mat2->AddTextureSRV("Albedo", paintColorSRV);
 	mat2->AddTextureSRV("NormalMap", paintNormalSRV);
 	mat2->AddTextureSRV("RoughnessMap", paintRoughSRV);
 	mat2->AddTextureSRV("MetalnessMap", paintMetalSRV);
 	mat2->AddSampler("BasicSampler", samplerState);
 
-	customMat = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), customPixelShader, vertexShader, 0.8);
+	matFloor = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), pixelShader, vertexShader, 0.9f, DirectX::XMFLOAT2(4, 4));
+	matFloor->AddTextureSRV("Albedo", paintColorSRV);
+	matFloor->AddTextureSRV("NormalMap", paintNormalSRV);
+	matFloor->AddTextureSRV("RoughnessMap", paintRoughSRV);
+	matFloor->AddTextureSRV("MetalnessMap", paintMetalSRV);
+	matFloor->AddSampler("BasicSampler", samplerState);
+
+	customMat = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), customPixelShader, vertexShader, 0.8, DirectX::XMFLOAT2(1, 1));
 
 	//Sky Object
 	cube = std::make_shared<Mesh>(R"(Assets/Mesh/cube.obj)", device, context);
@@ -308,6 +315,7 @@ void Game::CreateGeometry()
 	std::shared_ptr<GameEntity> entity5 = std::make_shared<GameEntity>(quaddouble, mat2);
 	std::shared_ptr<GameEntity> entity6 = std::make_shared<GameEntity>(sphere, mat1);
 	std::shared_ptr<GameEntity> entity7 = std::make_shared<GameEntity>(torus, mat2);
+	std::shared_ptr<GameEntity> entityFloor = std::make_shared<GameEntity>(cube, matFloor);
 
 	entity1->GetTransform()->SetPosition(-9, 0, 0);
 	entity2->GetTransform()->SetPosition(-6, 0, 0);
@@ -316,6 +324,8 @@ void Game::CreateGeometry()
 	entity5->GetTransform()->SetPosition(3, 0, 0);
 	entity6->GetTransform()->SetPosition(6, 0, 0);
 	entity7->GetTransform()->SetPosition(9, 0, 0);
+	entityFloor->GetTransform()->SetPosition(0, -3, 0);
+	entityFloor->GetTransform()->SetScale(16, 1, 16);
 
 	entities.push_back(entity1);
 	entities.push_back(entity2);
@@ -324,6 +334,7 @@ void Game::CreateGeometry()
 	entities.push_back(entity5);
 	entities.push_back(entity6);
 	entities.push_back(entity7);
+	entities.push_back(entityFloor);
 }
 
 

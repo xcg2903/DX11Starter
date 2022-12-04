@@ -7,6 +7,8 @@ cbuffer ExternalData : register(b0)
 	float3 cameraPos;
 	float roughness;
 	float3 ambient;
+	float2 uvScale;
+
 	Light dirLight1;
 	Light dirLight2;
 	Light dirLight3;
@@ -32,6 +34,9 @@ SamplerState BasicSampler : register(s0);
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
+	//Account for UV scaling
+	input.uv *= uvScale;
+
 	//Initial Variable Calculations
 	float3 finalColor;
 	float expWithRoughness = (1.0f - roughness) * MAX_SPECULAR_EXPONENT;
