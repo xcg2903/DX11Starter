@@ -3,10 +3,12 @@
 Sky::Sky(
 	std::shared_ptr<Mesh> geometry,
 	ComPtr<ID3D11ShaderResourceView> shaderResourceView,
+	ComPtr<ID3D11ShaderResourceView> shaderResourceViewNight,
 	ComPtr<ID3D11Device> device,
 	ComPtr<ID3D11SamplerState> samplerState)
 {
 	this->shaderResourceView = shaderResourceView;
+	this->shaderResourceViewNight = shaderResourceViewNight;
 	this->samplerState = samplerState;
 	this->geometry = geometry;
 
@@ -31,7 +33,8 @@ void Sky::Draw(
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContext,
 	std::shared_ptr<SimpleVertexShader> vs,
 	std::shared_ptr<SimplePixelShader> ps,
-	std::shared_ptr<Camera> camera)
+	std::shared_ptr<Camera> camera,
+	float totalTime)
 {
 	//Set states
 	deviceContext->RSSetState(rasterizer.Get());
@@ -44,9 +47,11 @@ void Sky::Draw(
 	//Vertex Shader References
 	vs->SetMatrix4x4("view", camera->GetViewMatrix());
 	vs->SetMatrix4x4("projection", camera->GetProjectionMatrix());
+	vs->SetFloat("totalTime", totalTime);
 
 	//Pixel Shader References
 	ps->SetShaderResourceView("SkyTexture", shaderResourceView);
+	ps->SetShaderResourceView("SkyTextureNight", shaderResourceViewNight); //Send both textures to pixel shader
 	ps->SetSamplerState("BasicSampler", samplerState);
 
 	//Map resource to the GPU itself

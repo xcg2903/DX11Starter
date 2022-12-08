@@ -2,6 +2,7 @@ cbuffer ExternalData : register(b0)
 {
 	matrix view;
 	matrix projection;
+	float totalTime;
 }
 
 struct VertexShaderInput
@@ -26,6 +27,7 @@ struct VertexToPixel
 	//  v    v                v
 	float4 position			: SV_POSITION;
 	float3 sampleDir		: DIRECTION;
+	float totalTime			: TIME;	
 };
 
 VertexToPixel main(VertexShaderInput input)
@@ -45,6 +47,9 @@ VertexToPixel main(VertexShaderInput input)
 
 	//Equal since the box will always be at the origin
 	output.sampleDir = input.localPosition;
+
+	//Carry totalTime over
+	output.totalTime = totalTime;
 
 	return output;
 }

@@ -14,6 +14,7 @@ public:
 	Sky(
 	std::shared_ptr<Mesh> geometry,
 	ComPtr<ID3D11ShaderResourceView> shaderResourceView,
+	ComPtr<ID3D11ShaderResourceView> shaderResourceViewNight,
 	ComPtr<ID3D11Device> device,
 	ComPtr<ID3D11SamplerState> samplerState);
 	~Sky();
@@ -21,10 +22,12 @@ public:
 		ComPtr<ID3D11DeviceContext> deviceContext,
 		std::shared_ptr<SimpleVertexShader> vs,
 		std::shared_ptr<SimplePixelShader> ps,
-		std::shared_ptr<Camera> camera);
+		std::shared_ptr<Camera> camera,
+		float totalTime);
 private:
 	ComPtr<ID3D11SamplerState> samplerState;
 	ComPtr<ID3D11ShaderResourceView> shaderResourceView;
+	ComPtr<ID3D11ShaderResourceView> shaderResourceViewNight;
 	ComPtr<ID3D11DepthStencilState> depthStencil;
 	ComPtr<ID3D11RasterizerState> rasterizer;
 	std::shared_ptr<Mesh> geometry;

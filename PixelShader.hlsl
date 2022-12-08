@@ -115,11 +115,13 @@ float4 main(VertexToPixel input) : SV_TARGET
 	float2 shadowUV = input.shadowPos.xy / input.shadowPos.w * 0.5f + 0.5f;
 	shadowUV.y = 1.0f - shadowUV.y; // Flip Y for sampling
 	// Read shadow map for closest surface (red channel)
-	float shDepth = ShadowMap.Sample(BasicSampler, shadowUV).r;
+	float shadowDepth = ShadowMap.Sample(BasicSampler, shadowUV).r;
+
+	//Sample 
+	float shadowAmount = ShadowMap.SampleCmpLevelZero(ShadowSampler, shadowUV, lightDepth);
 
 	//ADD IT ALL TOGETHER
-	finalColor = light4 + light5 + shDepth.rrr;
-	//finalColor = shDepth.rrr;
+	finalColor = light4 + light5 * shadowAmount;
 
 	// Return the color
 	return float4(pow(finalColor, 1.0f / 2.2f), 1); // Test light color WITH GAMMA

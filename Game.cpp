@@ -195,7 +195,8 @@ void Game::LoadShaders()
 		FixPath(L"ShadowVertexShader.cso").c_str());
 
 	
-	//CREATE SKY TEXTURE
+	//CREATE SKY TEXTURES
+	//DAY
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> skySRV; //Reference for shader
 	skySRV = CreateCubemap(
 		FixPath(L"../../Assets/Texture/CloudsPink/right.png").c_str(),
@@ -204,6 +205,15 @@ void Game::LoadShaders()
 		FixPath(L"../../Assets/Texture/CloudsPink/down.png").c_str(), 
 		FixPath(L"../../Assets/Texture/CloudsPink/front.png").c_str(), 
 		FixPath(L"../../Assets/Texture/CloudsPink/back.png").c_str());
+	//NIGHT
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> skyNightSRV; //Reference for shader
+	skyNightSRV = CreateCubemap(
+		FixPath(L"../../Assets/Texture/Night/right.png").c_str(),
+		FixPath(L"../../Assets/Texture/Night/left.png").c_str(),
+		FixPath(L"../../Assets/Texture/Night/up.png").c_str(),
+		FixPath(L"../../Assets/Texture/Night/down.png").c_str(),
+		FixPath(L"../../Assets/Texture/Night/front.png").c_str(),
+		FixPath(L"../../Assets/Texture/Night/back.png").c_str());
 
 	//LOAD TEXTURES
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeColorSRV; //Abledo
@@ -280,9 +290,9 @@ void Game::LoadShaders()
 
 	customMat = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), customPixelShader, vertexShader, 0.8, DirectX::XMFLOAT2(1, 1));
 
-	//Sky Object
+	//Sky Objects
 	cube = std::make_shared<Mesh>(R"(Assets/Mesh/cube.obj)", device, context);
-	sky = std::make_shared<Sky>(cube, skySRV, device, samplerState);
+	sky = std::make_shared<Sky>(cube, skySRV, skyNightSRV, device, samplerState);
 }
 
 
@@ -473,7 +483,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 
 	//Draw Sky
-	sky->Draw(context, skyVertexShader, skyPixelShader, camera);
+	sky->Draw(context, skyVertexShader, skyPixelShader, camera, totalTime);
 
 	// Draw ImGui
 	ImGui::Render();
