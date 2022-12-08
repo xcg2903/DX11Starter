@@ -17,6 +17,7 @@
 #include <iostream>
 #include <vector>
 #include "SimpleShader.h"
+#include "SpriteBatch.h"
 
 class Game 
 	: public DXCore
@@ -82,7 +83,8 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> shadowSampler;
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState> shadowRasterizer;
 
-
+	//SpriteBatch
+	std::shared_ptr<DirectX::SpriteBatch> spriteBatch;
 
 	//Variables for testing
 	std::vector<std::shared_ptr<GameEntity>> entities;

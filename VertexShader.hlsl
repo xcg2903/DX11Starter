@@ -8,6 +8,9 @@ cbuffer ExternalData : register(b0)
 	matrix view;
 	matrix projection;
 	matrix worldInvTranspose;
+
+	matrix shadowView;
+	matrix shadowProj;
 }
 
 // --------------------------------------------------------
@@ -42,12 +45,17 @@ VertexToPixel main( VertexShaderInput input )
 	//Update normal using the current world Matrix and pass it along
 	//Using inverse transpose accounts for non-uniform scale
 	output.normal = mul((float3x3)worldInvTranspose, input.normal);
-
 	//Multiply local position by world matrix, pass along
 	output.worldPosition = mul(world, float4(input.localPosition, 1)).xyz;
-
 	//Rotate tangent by world matrix
 	output.tangent = mul((float3x3)world, input.tangent);
+
+	//Shadow Map
+	//Calculate screen position of this pixel
+	//This takes the shadow we created and applys the world position to it
+	// Calculate where this position is from the light's point of view
+	matrix shadowWVP = mul(shadowProj, mul(shadowView, world));
+	output.shadowPos = mul(shadowWVP, float4(input.localPosition, 1.0f));
 
 	// Whatever we return will make its way through the pipeline to the
 	// next programmable stage we're using (the pixel shader for now)

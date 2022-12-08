@@ -17,11 +17,15 @@ cbuffer ExternalData : register(b0)
 	Light pointLight3;
 }
 
+//Textures
 Texture2D Albedo : register(t0);
 Texture2D NormalMap : register(t1);
 Texture2D RoughnessMap : register(t2);
 Texture2D MetalnessMap : register(t3);
+Texture2D ShadowMap	: register(t4);
+//Samplers
 SamplerState BasicSampler : register(s0);
+SamplerComparisonState ShadowSampler : register(s1);
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
@@ -67,8 +71,6 @@ float4 main(VertexToPixel input) : SV_TARGET
 	// because of linear texture sampling, so we lerp the specular color to match
 	float3 specularColor = lerp(F0_NON_METAL.rrr, albedoColor.rgb, metalness);
 
-
-
 	//Negate light direction
 	float3 dirToDirLight1 = normalize(dirLight1.direction * -1);
 	float3 dirToDirLight2 = normalize(dirLight2.direction * -1);
@@ -106,16 +108,19 @@ float4 main(VertexToPixel input) : SV_TARGET
 	float3 light5 = (balancedDiff5 * albedoColor + spec5) * pointLight2.intensity * pointLight2.color;
 	light5 *= attenuate(pointLight2, input.worldPosition);
 
-	//ADD IT ALL TOGETHER
-	finalColor = light4 + light5;
+	// Calculate depth (distance) from light
+	// - Doing the perspective divide ourselves
+	float lightDepth = input.shadowPos.z / input.shadowPos.w;
+	// Adjust [-1 to 1] range to be [0 to 1] for UV’s
+	float2 shadowUV = input.shadowPos.xy / input.shadowPos.w * 0.5f + 0.5f;
+	shadowUV.y = 1.0f - shadowUV.y; // Flip Y for sampling
+	// Read shadow map for closest surface (red channel)
+	float shDepth = ShadowMap.Sample(BasicSampler, shadowUV).r;
 
-	// Just return the input color
-	// - This color (like most values passing through the rasterizer) is 
-	//   interpolated for each pixel between the corresponding vertices 
-	//   of the triangle we're rendering
-	//return float4(ambient, 1);
-	//return float4(input.normal, 1); // Test Normals
+	//ADD IT ALL TOGETHER
+	finalColor = light4 + light5 + shDepth.rrr;
+	//finalColor = shDepth.rrr;
+
+	// Return the color
 	return float4(pow(finalColor, 1.0f / 2.2f), 1); // Test light color WITH GAMMA
-	//return float4(roughness.rrr, 1); //Test Roughness
-	//return float4(input.uv, 0, 1); //Test UV coordinates
 }

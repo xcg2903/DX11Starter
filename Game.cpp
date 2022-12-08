@@ -80,6 +80,9 @@ void Game::Init()
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
 	CreateGeometry();
+
+	//Set up SpriteBatch
+	spriteBatch = std::make_shared<SpriteBatch>(context.Get());
 	
 	// Set initial graphics API state
 	//  - These settings persist until we change them
@@ -400,6 +403,13 @@ void Game::Update(float deltaTime, float totalTime)
 	entities[4]->GetTransform()->SetPosition(3,  (sin(totalTime + 0.5) * speed), 0);
 	entities[5]->GetTransform()->SetPosition(6,  (sin(totalTime + 0.6) * speed), 0);
 	entities[6]->GetTransform()->SetPosition(9,  (sin(totalTime + 0.7) * speed), 0);
+
+	//Move the Sun (Update the Shadow-Casting Light's View Matrix)
+	XMMATRIX shView = XMMatrixLookAtLH(
+		XMVectorSet(0, 20 * sin(totalTime + 0.1), 20 * cos(totalTime + 0.1), 0),
+		XMVectorSet(0, 0, 0, 0),
+		XMVectorSet(0, 1, 0, 0));
+	XMStoreFloat4x4(&shadowView, shView);
 }
 
 // --------------------------------------------------------
@@ -420,7 +430,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 
 	//Render a shadow map before any other objects
-	//RenderShadowMap();
+	RenderShadowMap();
 
 	for (auto& i : entities)
 	{
@@ -429,6 +439,10 @@ void Game::Draw(float deltaTime, float totalTime)
 		//Send ShadowMap matricies to the vertex shader for calculations
 		vertexShader->SetMatrix4x4("shadowView", shadowView);
 		vertexShader->SetMatrix4x4("shadowProj", shadowProj);
+
+		//Send ShadowMap resources to pixel shader for sampling
+		pixelShader->SetShaderResourceView("ShadowMap", shadowSRV);
+		pixelShader->SetSamplerState("ShadowSampler", shadowSampler);
 
 		i->GetMaterial()->GetPixelShader()->SetData(
 			"dirLight1", // The name of the (eventual) variable in the shader
@@ -454,10 +468,6 @@ void Game::Draw(float deltaTime, float totalTime)
 			"pointLight3", // The name of the (eventual) variable in the shader
 			&point3, // The address of the data to set
 			sizeof(Light)); // The size of the data (the whole struct!) to set
-
-		//Send ShadowMap resources to pixel shader for sampling
-		pixelShader->SetShaderResourceView("ShadowMap", shadowSRV);
-		pixelShader->SetSamplerState("ShadowMap", shadowSampler);
 
 		i->Draw(context, camera);
 	}
@@ -487,12 +497,12 @@ void Game::PrepareShadowMap()
 {
 	//Values
 	shadowResolution = 1024;
-	shadowProjSize = 10.0f;
+	shadowProjSize = 30.0f;
 
 	//Define the texture
 	D3D11_TEXTURE2D_DESC shadowDesc = {};
 	shadowDesc.Width = shadowResolution;
-	shadowDesc.Height = shadowProjSize;
+	shadowDesc.Height = shadowResolution;
 	shadowDesc.ArraySize = 1;
 	shadowDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 	shadowDesc.CPUAccessFlags = 0;
@@ -543,7 +553,7 @@ void Game::PrepareShadowMap()
 	device->CreateRasterizerState(&shadowRastDesc, &shadowRasterizer);
 
 
-	//View
+	//View (Starting Value)
 	XMMATRIX shView = XMMatrixLookAtLH(
 		XMVectorSet(0, 20, -20, 0),
 		XMVectorSet(0, 0, 0, 0),
@@ -575,7 +585,7 @@ void Game::RenderShadowMap()
 	//Activate the NEW vertex shader and send data to it
 	shadowVertexShader->SetShader();
 	shadowVertexShader->SetMatrix4x4("view", shadowView);
-	shadowVertexShader->SetMatrix4x4("proj", shadowProj);
+	shadowVertexShader->SetMatrix4x4("projection", shadowProj);
 	context->PSSetShader(0, 0, 0); //Don't use pixel shader
 
 	// Loop and draw all entities
@@ -587,6 +597,20 @@ void Game::RenderShadowMap()
 		// Draw the mesh
 		e->GetMesh()->Draw();
 	}
+
+	//SpriteBatch TESTING
+	/*
+	spriteBatch->Begin();
+	spriteBatch->Draw(shadowSRV.Get(), XMFLOAT2(0, 0));
+	spriteBatch->End();
+	*/
+
+	//Return to the normal screen
+	context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), depthBufferDSV.Get());
+	viewport.Width = (float)this->windowWidth;
+	viewport.Height = (float)this->windowHeight;
+	context->RSSetViewports(1, &viewport);
+	context->RSSetState(0);
 }
 
 

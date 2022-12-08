@@ -52,6 +52,7 @@ struct VertexToPixel
 	float3 normal			: NORMAL;
 	float3 worldPosition	: POSITION;
 	float3 tangent			: TANGENT;
+	float4 shadowPos		: SHADOWPOS;
 };
 
 //Similar struct but just for the shadow map
