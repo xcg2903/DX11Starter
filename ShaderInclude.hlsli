@@ -18,6 +18,24 @@ struct Light
 	float3 padding; // padding to hit the 16-byte boundar
 };
 
+// Struct representing a single vertex worth of data
+// - This should match the vertex definition in our C++ code
+// - By "match", I mean the size, order and number of members
+// - The name of the struct itself is unimportant, but should be descriptive
+// - Each variable must have a semantic, which defines its usage
+struct VertexShaderInput
+{
+	// Data type
+	//  |
+	//  |   Name          Semantic
+	//  |    |                |
+	//  v    v                v
+	float3 localPosition	: POSITION;     // XYZ position
+	float3 normal			: NORMAL;        // RGBA color
+	float2 uv				: TEXCOORD;        // RGBA color
+	float3 tangent			: TANGENT;
+};
+
 // Struct representing the data we expect to receive from earlier pipeline stages
 // - The name of the struct itself is unimportant
 // - The variable names don't have to match other shaders (just the semantics)
@@ -35,6 +53,8 @@ struct VertexToPixel
 	float3 worldPosition	: POSITION;
 	float3 tangent			: TANGENT;
 };
+
+//Similar struct but just for the shadow map
 
 // CONSTANTS ===================
 

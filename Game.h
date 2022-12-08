@@ -66,6 +66,24 @@ private:
 		const wchar_t* front,
 		const wchar_t* back);
 
+	void PrepareShadowMap();
+	void RenderShadowMap();
+
+	//Variables for Shadow Mapping
+	std::shared_ptr<SimpleVertexShader> shadowVertexShader;
+	DirectX::XMFLOAT4X4 shadowView;
+	DirectX::XMFLOAT4X4 shadowProj;
+	int shadowResolution;
+	float shadowProjSize;
+	//DirectX Resources for Shadow Mapping
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> shadowTexture;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> shadowDSV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shadowSRV;
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> shadowSampler;
+	Microsoft::WRL::ComPtr<ID3D11RasterizerState> shadowRasterizer;
+
+
+
 	//Variables for testing
 	std::vector<std::shared_ptr<GameEntity>> entities;
 

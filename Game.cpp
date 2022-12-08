@@ -158,6 +158,9 @@ void Game::Init()
 	ImGui::StyleColorsDark();
 	//ImGui::StyleColorsLight();
 	//ImGui::StyleColorsClassic();
+
+	//Set up Shadow Map
+	PrepareShadowMap();
 }
 
 // --------------------------------------------------------
@@ -171,18 +174,22 @@ void Game::Init()
 void Game::LoadShaders()
 {
 	//Create shader points using SimpleShader
+	//Normal
 	vertexShader = make_shared<SimpleVertexShader>(device, context,
 		FixPath(L"VertexShader.cso").c_str());
 	pixelShader = make_shared<SimplePixelShader>(device, context,
 		FixPath(L"PixelShader.cso").c_str());
-
+	//Cool Effect
 	customPixelShader = make_shared<SimplePixelShader>(device, context,
 		FixPath(L"CustomTestShader.cso").c_str());
-
+	//Sky
 	skyVertexShader = make_shared<SimpleVertexShader>(device, context,
 		FixPath(L"SkyVertexShader.cso").c_str());
 	skyPixelShader = make_shared<SimplePixelShader>(device, context,
 		FixPath(L"SkyPixelShader.cso").c_str());
+	//Shadows
+	shadowVertexShader = make_shared<SimpleVertexShader>(device, context,
+		FixPath(L"ShadowVertexShader.cso").c_str());
 
 	
 	//CREATE SKY TEXTURE
@@ -222,6 +229,19 @@ void Game::LoadShaders()
 	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/paint_metal.png").c_str(), 0,
 		paintMetalSRV.GetAddressOf());
 
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobbleColorSRV; //Abledo
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/cobblestone_albedo.png").c_str(), 0,
+		cobbleColorSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobbleNormalSRV; //Normals
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/cobblestone_normals.png").c_str(), 0,
+		cobbleNormalSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobbleRoughSRV; //Roughness
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/cobblestone_roughness.png").c_str(), 0,
+		cobbleRoughSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobbleMetalSRV; //Metal
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Texture/cobblestone_metal.png").c_str(), 0,
+		cobbleMetalSRV.GetAddressOf());
+
 
 	//Define sampler state
 	D3D11_SAMPLER_DESC samplerDesc = {};
@@ -249,10 +269,10 @@ void Game::LoadShaders()
 	mat2->AddSampler("BasicSampler", samplerState);
 
 	matFloor = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), pixelShader, vertexShader, 0.9f, DirectX::XMFLOAT2(4, 4));
-	matFloor->AddTextureSRV("Albedo", paintColorSRV);
-	matFloor->AddTextureSRV("NormalMap", paintNormalSRV);
-	matFloor->AddTextureSRV("RoughnessMap", paintRoughSRV);
-	matFloor->AddTextureSRV("MetalnessMap", paintMetalSRV);
+	matFloor->AddTextureSRV("Albedo", cobbleColorSRV);
+	matFloor->AddTextureSRV("NormalMap", cobbleNormalSRV);
+	matFloor->AddTextureSRV("RoughnessMap", cobbleRoughSRV);
+	matFloor->AddTextureSRV("MetalnessMap", cobbleMetalSRV);
 	matFloor->AddSampler("BasicSampler", samplerState);
 
 	customMat = make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), customPixelShader, vertexShader, 0.8, DirectX::XMFLOAT2(1, 1));
@@ -399,9 +419,16 @@ void Game::Draw(float deltaTime, float totalTime)
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
+	//Render a shadow map before any other objects
+	//RenderShadowMap();
+
 	for (auto& i : entities)
 	{
 		i->GetMaterial()->GetPixelShader()->SetFloat3("ambient", ambientColor); //Send world ambient to shader
+
+		//Send ShadowMap matricies to the vertex shader for calculations
+		vertexShader->SetMatrix4x4("shadowView", shadowView);
+		vertexShader->SetMatrix4x4("shadowProj", shadowProj);
 
 		i->GetMaterial()->GetPixelShader()->SetData(
 			"dirLight1", // The name of the (eventual) variable in the shader
@@ -428,6 +455,10 @@ void Game::Draw(float deltaTime, float totalTime)
 			&point3, // The address of the data to set
 			sizeof(Light)); // The size of the data (the whole struct!) to set
 
+		//Send ShadowMap resources to pixel shader for sampling
+		pixelShader->SetShaderResourceView("ShadowMap", shadowSRV);
+		pixelShader->SetSamplerState("ShadowMap", shadowSampler);
+
 		i->Draw(context, camera);
 	}
 
@@ -451,6 +482,113 @@ void Game::Draw(float deltaTime, float totalTime)
 		context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), depthBufferDSV.Get());
 	}
 }
+
+void Game::PrepareShadowMap()
+{
+	//Values
+	shadowResolution = 1024;
+	shadowProjSize = 10.0f;
+
+	//Define the texture
+	D3D11_TEXTURE2D_DESC shadowDesc = {};
+	shadowDesc.Width = shadowResolution;
+	shadowDesc.Height = shadowProjSize;
+	shadowDesc.ArraySize = 1;
+	shadowDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	shadowDesc.CPUAccessFlags = 0;
+	shadowDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	shadowDesc.MipLevels = 1;
+	shadowDesc.MiscFlags = 0;
+	shadowDesc.SampleDesc.Count = 1;
+	shadowDesc.SampleDesc.Quality = 0;
+	shadowDesc.Usage = D3D11_USAGE_DEFAULT;
+	device->CreateTexture2D(&shadowDesc, 0, shadowTexture.GetAddressOf());
+
+	//Define Depth/Stencil
+	D3D11_DEPTH_STENCIL_VIEW_DESC shadowDSDesc = {};
+	shadowDSDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	shadowDSDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	shadowDSDesc.Texture2D.MipSlice = 0;
+	device->CreateDepthStencilView(shadowTexture.Get(), &shadowDSDesc, shadowDSV.GetAddressOf());
+
+	// Define Shadow Resource View
+	D3D11_SHADER_RESOURCE_VIEW_DESC shadowSRVDesc = {};
+	shadowSRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	shadowSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	shadowSRVDesc.Texture2D.MipLevels = 1;
+	shadowSRVDesc.Texture2D.MostDetailedMip = 0;
+	device->CreateShaderResourceView(shadowTexture.Get(), &shadowSRVDesc, shadowSRV.GetAddressOf());
+
+	// Define Comparison State
+	D3D11_SAMPLER_DESC shadowSampDesc = {};
+	shadowSampDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR; // This is the comparison filter
+	shadowSampDesc.ComparisonFunc = D3D11_COMPARISON_LESS;
+	shadowSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+	shadowSampDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+	shadowSampDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+	shadowSampDesc.BorderColor[0] = 1.0f;
+	shadowSampDesc.BorderColor[1] = 1.0f;
+	shadowSampDesc.BorderColor[2] = 1.0f;
+	shadowSampDesc.BorderColor[3] = 1.0f;
+	device->CreateSamplerState(&shadowSampDesc, &shadowSampler);
+
+	//Define Rasterizer state
+	D3D11_RASTERIZER_DESC shadowRastDesc = {};
+	shadowRastDesc.FillMode = D3D11_FILL_SOLID;
+	shadowRastDesc.CullMode = D3D11_CULL_BACK;
+	shadowRastDesc.DepthClipEnable = true;
+	shadowRastDesc.DepthBias = 1000;
+	shadowRastDesc.DepthBiasClamp = 0.0f;
+	shadowRastDesc.SlopeScaledDepthBias = 1.0f;
+	device->CreateRasterizerState(&shadowRastDesc, &shadowRasterizer);
+
+
+	//View
+	XMMATRIX shView = XMMatrixLookAtLH(
+		XMVectorSet(0, 20, -20, 0),
+		XMVectorSet(0, 0, 0, 0),
+		XMVectorSet(0, 1, 0, 0));
+	XMStoreFloat4x4(&shadowView, shView);
+
+	//Projection
+	XMMATRIX shProj = XMMatrixOrthographicLH(shadowProjSize, shadowProjSize, 0.1f, 100.0f);
+	XMStoreFloat4x4(&shadowProj, shProj);
+}
+
+void Game::RenderShadowMap()
+{
+	// Set up render pipeline
+	context->OMSetRenderTargets(0, 0, shadowDSV.Get());
+	context->ClearDepthStencilView(shadowDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+	context->RSSetState(shadowRasterizer.Get());
+
+	//Create viewport using the defined resolution
+	D3D11_VIEWPORT viewport = {};
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+	viewport.Width = (float)shadowResolution;
+	viewport.Height = (float)shadowResolution;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	context->RSSetViewports(1, &viewport);
+
+	//Activate the NEW vertex shader and send data to it
+	shadowVertexShader->SetShader();
+	shadowVertexShader->SetMatrix4x4("view", shadowView);
+	shadowVertexShader->SetMatrix4x4("proj", shadowProj);
+	context->PSSetShader(0, 0, 0); //Don't use pixel shader
+
+	// Loop and draw all entities
+	for (auto& e : entities)
+	{
+		shadowVertexShader->SetMatrix4x4("world", e->GetTransform()->GetWorldMatrix());
+		shadowVertexShader->CopyAllBufferData();
+
+		// Draw the mesh
+		e->GetMesh()->Draw();
+	}
+}
+
 
 void Game::UpdateImGui(float deltaTime)
 {
