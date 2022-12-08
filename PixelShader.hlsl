@@ -38,6 +38,8 @@ SamplerComparisonState ShadowSampler : register(s1);
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
+	//=INITALIZE VALUES====================================================================================================
+
 	//Account for UV scaling
 	input.uv *= uvScale;
 
@@ -60,31 +62,57 @@ float4 main(VertexToPixel input) : SV_TARGET
 
 	//ROUGHNESS
 	float roughness = RoughnessMap.Sample(BasicSampler, input.uv).r;
-
 	//METALNESS
 	float metalness = MetalnessMap.Sample(BasicSampler, input.uv).r;
 
 	// Specular color determination -----------------
 	// Assume albedo texture is actually holding specular color where metalness == 1
-	//
-	// Note the use of lerp here - metal is generally 0 or 1, but might be in between
-	// because of linear texture sampling, so we lerp the specular color to match
 	float3 specularColor = lerp(F0_NON_METAL.rrr, albedoColor.rgb, metalness);
-
-	//Negate light direction
-	float3 dirToDirLight1 = normalize(dirLight1.direction * -1);
-	float3 dirToDirLight2 = normalize(dirLight2.direction * -1);
-	float3 dirToDirLight3 = normalize(dirLight3.direction * -1);
 
 	//View vector
 	float3 dirToCamera = normalize((input.worldPosition - cameraPos) * -1);
 
+
+
+	//=SHADOW MAPPING====================================================================================================
+
+	// Calculate depth (distance) from light
+// - Doing the perspective divide ourselves
+	float lightDepth = input.shadowPos.z / input.shadowPos.w;
+	// Adjust [-1 to 1] range to be [0 to 1] for UV’s
+	float2 shadowUV = input.shadowPos.xy / input.shadowPos.w * 0.5f + 0.5f;
+	shadowUV.y = 1.0f - shadowUV.y; // Flip Y for sampling
+	// Read shadow map for closest surface (red channel)
+	float shadowDepth = ShadowMap.Sample(BasicSampler, shadowUV).r;
+
+	//Sample using our Comparison Sampler
+	float shadowAmount = ShadowMap.SampleCmpLevelZero(ShadowSampler, shadowUV, lightDepth);
+
+
+
+	//=LIGHTS====================================================================================================
+
 	//DIRECTIONAL LIGHTS
-	/*
-	//Light1
-	float3 phong1 = phong(normalize(dirLight1.direction), expWithRoughness, input.normal, input.worldPosition, cameraPos);
-	float3 diffuse1 = diffuse(input.normal, dirToDirLight1);
-	float3 light1 = (surfaceColor * (diffuse1 + phong1)) * dirLight1.color;*/
+	
+	//Light1 - SUN
+	float3 dirToDirLight1 = normalize(dirLight1.direction * -1); 	//Negate light direction
+	//Light Amounts
+	float3 spec1 = MicrofacetBRDF(input.normal, dirToDirLight1, dirToCamera, roughness, specularColor);
+	float3 diffuse1 = DiffusePBR(input.normal, dirToDirLight1);
+	//Energy conservation
+	float3 balancedDiff1 = DiffuseEnergyConserve(diffuse1, spec1, metalness);
+	float3 light1 = (balancedDiff1 * albedoColor + spec1) * dirLight1.intensity * dirLight1.color;
+	finalColor = light1 * shadowAmount; //This is the light casting shadow
+
+	//Light2 - MOON
+	float3 dirToDirLight2 = normalize(dirLight2.direction * -1); 	//Negate light direction
+	//Light Amounts
+	float3 spec2 = MicrofacetBRDF(input.normal, dirToDirLight2, dirToCamera, roughness, specularColor);
+	float3 diffuse2 = DiffusePBR(input.normal, dirToDirLight2);
+	//Energy conservation
+	float3 balancedDiff2 = DiffuseEnergyConserve(diffuse2, spec2, metalness);
+	float3 light2 = (balancedDiff2 * albedoColor + spec2) * dirLight2.intensity * dirLight2.color;
+	finalColor += light2;
 
 	//POINT LIGHTS
 	// 
@@ -97,6 +125,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 	float3 balancedDiff4 = DiffuseEnergyConserve(diffuse4, spec4, metalness);
 	float3 light4 = (balancedDiff4 * albedoColor + spec4) * pointLight1.intensity * pointLight1.color;
 	light4 *= attenuate(pointLight1, input.worldPosition);
+	finalColor += light4;
 
 	//LIGHT 5 (POINT LIGHT 2)
 	float3 dirToPointLight2 = normalize((input.worldPosition - pointLight2.position) * -1);
@@ -107,22 +136,22 @@ float4 main(VertexToPixel input) : SV_TARGET
 	float3 balancedDiff5 = DiffuseEnergyConserve(diffuse5, spec5, metalness);
 	float3 light5 = (balancedDiff5 * albedoColor + spec5) * pointLight2.intensity * pointLight2.color;
 	light5 *= attenuate(pointLight2, input.worldPosition);
+	finalColor += light5;
 
-	// Calculate depth (distance) from light
-	// - Doing the perspective divide ourselves
-	float lightDepth = input.shadowPos.z / input.shadowPos.w;
-	// Adjust [-1 to 1] range to be [0 to 1] for UV’s
-	float2 shadowUV = input.shadowPos.xy / input.shadowPos.w * 0.5f + 0.5f;
-	shadowUV.y = 1.0f - shadowUV.y; // Flip Y for sampling
-	// Read shadow map for closest surface (red channel)
-	float shadowDepth = ShadowMap.Sample(BasicSampler, shadowUV).r;
+	//LIGHT 6 (POINT LIGHT 3)
+	float3 dirToPointLight3 = normalize((input.worldPosition - pointLight3.position) * -1);
+	//Light amounts
+	float3 spec6 = MicrofacetBRDF(input.normal, dirToPointLight3, dirToCamera, roughness, specularColor);
+	float3 diffuse6 = DiffusePBR(input.normal, dirToPointLight3);
+	//Energy conservation
+	float3 balancedDiff6 = DiffuseEnergyConserve(diffuse6, spec6, metalness);
+	float3 light6 = (balancedDiff6 * albedoColor + spec6) * pointLight3.intensity * pointLight3.color;
+	light6 *= attenuate(pointLight3, input.worldPosition);
+	finalColor += light6;
 
-	//Sample 
-	float shadowAmount = ShadowMap.SampleCmpLevelZero(ShadowSampler, shadowUV, lightDepth);
 
-	//ADD IT ALL TOGETHER
-	finalColor = light4 + light5 * shadowAmount;
 
-	// Return the color
+	//=RETURN RESULT====================================================================================================
+
 	return float4(pow(finalColor, 1.0f / 2.2f), 1); // Test light color WITH GAMMA
 }

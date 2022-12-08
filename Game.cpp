@@ -112,24 +112,18 @@ void Game::Init()
 	//Lighting
 	ambientColor = XMFLOAT3(0.2f, 0.1f, 0.1f); //Pink to match sky
 
-	//Yellow Directional
+	//MAIN Directional (Sun)
 	directional1 = {};
 	directional1.type = LIGHT_TYPE_DIRECTIONAL;
 	directional1.direction = XMFLOAT3(0.0, -1.0, 1.0);
-	directional1.color = XMFLOAT3(1.0, 1.0, 0.0);
+	directional1.color = XMFLOAT3(1.0, 0.6, 0.6);
 	directional1.intensity = 1.0f;
-	//Magenta Directional
+	//SECONDARY Directional (Moon)
 	directional2 = {};
 	directional2.type = LIGHT_TYPE_DIRECTIONAL;
-	directional2.direction = XMFLOAT3(1.0, -1.0, 0.0);
-	directional2.color = XMFLOAT3(1.0, 0.0, 1.0);
+	directional2.direction = XMFLOAT3(0.0, 1.0, 1.0);
+	directional2.color = XMFLOAT3(0.05, 0.05, 0.3);
 	directional2.intensity = 1.0f;
-	//Cyan Directional
-	directional3 = {};
-	directional3.type = LIGHT_TYPE_DIRECTIONAL;
-	directional3.direction = XMFLOAT3(-1.0, -1.0, 0.0);
-	directional3.color = XMFLOAT3(0.0, 1.0, 1.0);
-	directional3.intensity = 1.0f;
 	//Magenta Point
 	point1 = {};
 	point1.type = LIGHT_TYPE_POINT;
@@ -137,18 +131,18 @@ void Game::Init()
 	point1.color = XMFLOAT3(1.0, 0.0, 1.0);
 	point1.range = 15.0f;
 	point1.intensity = 1.0f;
-	//Yellow Point
+	//Green Point
 	point2 = {};
 	point2.type = LIGHT_TYPE_POINT;
 	point2.position = XMFLOAT3(4.0, -2.0, 0.0);
-	point2.color = XMFLOAT3(1.0, 1.0, 0.0);
+	point2.color = XMFLOAT3(0.0, 1.0, 0.0);
 	point2.range = 20.0f;
 	point2.intensity = 1.0f;
-	//White Point
+	//Cyan Point
 	point3 = {};
 	point3.type = LIGHT_TYPE_POINT;
 	point3.position = XMFLOAT3(6.0, 2.0, 0.0);
-	point3.color = XMFLOAT3(1.0, 1.0, 1.0);
+	point3.color = XMFLOAT3(0.0, 1.0, 1.0);
 	point3.range = 20.0f;
 	point3.intensity = 1.0f;
 
@@ -416,10 +410,16 @@ void Game::Update(float deltaTime, float totalTime)
 
 	//Move the Sun (Update the Shadow-Casting Light's View Matrix)
 	XMMATRIX shView = XMMatrixLookAtLH(
-		XMVectorSet(0, 20 * sin(totalTime + 0.1), 20 * cos(totalTime + 0.1), 0),
+		XMVectorSet(0, 20 * sin(totalTime), 20 * cos(totalTime), 0),
 		XMVectorSet(0, 0, 0, 0),
 		XMVectorSet(0, 1, 0, 0));
 	XMStoreFloat4x4(&shadowView, shView);
+
+	//Change directional light direction
+	directional1.direction = XMFLOAT3(0.0, -sin(totalTime), -cos(totalTime));
+	directional2.direction = XMFLOAT3(0.0, -sin(totalTime + XM_PI), -cos(totalTime + XM_PI)); //Have moon be the inverse
+	//Update moon color so no blue is shown during the day (easier than adding a second shadow map)
+	directional2.color = XMFLOAT3(-sin(totalTime) / 8, -sin(totalTime) / 8, -sin(totalTime) / 3);
 }
 
 // --------------------------------------------------------
@@ -563,7 +563,7 @@ void Game::PrepareShadowMap()
 	device->CreateRasterizerState(&shadowRastDesc, &shadowRasterizer);
 
 
-	//View (Starting Value)
+	//View (Starting Values, will be replaced by update)
 	XMMATRIX shView = XMMatrixLookAtLH(
 		XMVectorSet(0, 20, -20, 0),
 		XMVectorSet(0, 0, 0, 0),
@@ -722,6 +722,20 @@ void Game::UpdateImGui(float deltaTime)
 		{
 			// Something changed, so overwrite the transform’s data
 			point2.color = XMFLOAT3(col2.x, col2.y, col2.z);
+		}
+
+		ImGui::Text("Point Light 3");
+		XMFLOAT3 pos3 = point3.position;
+		if (ImGui::DragFloat3("Position##3", &pos3.x, 0.05f))
+		{
+			// Something changed, so overwrite the transform’s data
+			point3.position = XMFLOAT3(pos3.x, pos3.y, pos3.z);
+		}
+		XMFLOAT3 col3 = point3.color;
+		if (ImGui::DragFloat3("Color##3", &col3.x, 0.01f, 0.0f, 1.0f))
+		{
+			// Something changed, so overwrite the transform’s data
+			point3.color = XMFLOAT3(col3.x, col3.y, col3.z);
 		}
 	}
 
